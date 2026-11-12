@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — REUSE Smart Reuse & Recycling IMS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px;">
+
+  <div style="background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-xl); box-shadow:var(--shadow-lg); width:100%; max-width:460px; padding:36px;">
+    <!-- Logo & Title -->
+    <div style="text-align:center; margin-bottom:24px;">
+      <div class="brand-icon" style="margin:0 auto 12px auto; width:52px; height:52px; font-size:1.6rem;">
+        <i class="fa-solid fa-leaf"></i>
+      </div>
+      <h2 style="font-size:1.6rem;">Join the Movement</h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-top:4px;">
+        Start donating, exchanging, and reducing waste in your community.
+      </p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('register') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" name="name" class="form-input" placeholder="e.g. Alex Henderson" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-input" placeholder="alex@domain.org" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Create Password</label>
+        <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+      </div>
+
+      <div style="margin-bottom:18px; font-size:0.8rem; color:var(--text-muted);">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" checked required style="accent-color:var(--primary);">
+          <span>I commit to sharing reusable items and supporting zero-waste.</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" style="padding:12px;">
+        <i class="fa-solid fa-user-plus"></i> Create Eco Account
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:20px; font-size:0.88rem; color:var(--text-muted);">
+      Already a member? <a href="{{ url_for('login') }}" style="color:var(--primary); font-weight:700;">Sign In</a>
+    </div>
+
+    <div style="text-align:center; margin-top:10px;">
+      <a href="{{ url_for('index') }}" style="font-size:0.82rem; color:var(--text-light);"><i class="fa-solid fa-arrow-left"></i> Return to Dashboard</a>
+    </div>
+  </div>
+
+</body>
+</html>
+

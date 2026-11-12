@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Product — REUSE Smart Reuse & Recycling IMS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon"><i class="fa-solid fa-recycle"></i></div>
+        <div class="brand-name">REUSE <span>• IMS</span></div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <div class="menu-label">Main Menu</div>
+        <a href="{{ url_for('index') }}" class="menu-item">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('products') }}" class="menu-item">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Browse Products</span>
+        </a>
+        <a href="{{ url_for('add_product') }}" class="menu-item active">
+          <i class="fa-solid fa-circle-plus"></i>
+          <span>Add New Product</span>
+        </a>
+
+        <div class="menu-label">Community Actions</div>
+        <a href="{{ url_for('products', type='donation') }}" class="menu-item">
+          <i class="fa-solid fa-hand-holding-heart"></i>
+          <span>Donate Items</span>
+        </a>
+        <a href="{{ url_for('products', type='exchange') }}" class="menu-item">
+          <i class="fa-solid fa-repeat"></i>
+          <span>Exchange Items</span>
+        </a>
+        <a href="{{ url_for('products') }}" class="menu-item">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <span>My Requests</span>
+        </a>
+
+        <div class="menu-label">Account</div>
+        <a href="{{ url_for('login') }}" class="menu-item">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>Profile</span>
+        </a>
+        <a href="{{ url_for('logout') }}" class="menu-item" style="color: var(--accent-rose);">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 style="font-size: 1.25rem;">List an Item for Reuse</h2>
+        </div>
+
+        <div class="topbar-right">
+          <div class="user-chip">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="user-avatar">
+            <div style="font-size: 0.84rem; font-weight: 700;">{{ user.name }}</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="card form-card">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div class="hero-pill" style="background: var(--primary-subtle); color: var(--primary-dark);">
+              <i class="fa-solid fa-seedling"></i> Circular Listing Form
+            </div>
+            <h2>Give Your Item a Second Life</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              Fill in the details below to offer your unused goods for free community donation or barter exchange.
+            </p>
+          </div>
+
+          <form action="{{ url_for('add_product') }}" method="POST" enctype="multipart/form-data">
+            <!-- Row 1: Product Name & Category -->
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Product Name <span style="color: var(--accent-rose);">*</span></label>
+                <input type="text" name="name" class="form-input" placeholder="e.g. Ergonomic Office Desk Chair" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Category <span style="color: var(--accent-rose);">*</span></label>
+                <select name="category" class="form-select" required>
+                  <option value="" disabled selected>Select a category...</option>
+                  <option value="Clothes">Clothes & Apparel</option>
+                  <option value="Books">Books & Stationery</option>
+                  <option value="Electronics">Electronics & Gadgets</option>
+                  <option value="Furniture">Furniture & Decor</option>
+                  <option value="Household">Household & Kitchen</option>
+                  <option value="Toys">Toys & Sports</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row 2: Condition & Listing Option -->
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Condition <span style="color: var(--accent-rose);">*</span></label>
+                <select name="condition" class="form-select" required>
+                  <option value="New">Brand New (Unopened / Tagged)</option>
+                  <option value="Good" selected>Good Condition (Clean, works fine)</option>
+                  <option value="Used">Used / Functional (Cosmetic wear, fully works)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Donation or Exchange Option <span style="color: var(--accent-rose);">*</span></label>
+                <select name="type" class="form-select" onchange="handleTypeChange(this.value)" required>
+                  <option value="donation" selected>Free Donation ($0 Free Giving)</option>
+                  <option value="exchange">Barter Exchange (Trade for another item)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Conditional Exchange Field -->
+            <div class="form-group" id="exchangeLookingForField" style="display: none;">
+              <label class="form-label">What item are you looking for in exchange?</label>
+              <input type="text" name="looking_for" class="form-input" placeholder="e.g. Mechanical keyboard, guitar, or blender">
+            </div>
+
+            <!-- Row 3: Location & Approx Weight -->
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Pickup Location / City <span style="color: var(--accent-rose);">*</span></label>
+                <input type="text" name="location" class="form-input" placeholder="e.g. Green Park Eco Zone, Downtown" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Approx Weight in kg (For Eco Impact)</label>
+                <input type="number" step="0.5" name="weight" class="form-input" value="2.5">
+              </div>
+            </div>
+
+            <!-- Product Description -->
+            <div class="form-group">
+              <label class="form-label">Product Description <span style="color: var(--accent-rose);">*</span></label>
+              <textarea name="description" class="form-textarea" placeholder="Describe the item's dimensions, condition, age, and any pickup details..." required></textarea>
+            </div>
+
+            <!-- Product Image Upload -->
+            <div class="form-group">
+              <label class="form-label">Product Image <span style="color: var(--accent-rose);">*</span></label>
+              <input type="file" name="image_file" class="form-input" accept="image/*" onchange="handleImagePreview(this)">
+              <input type="hidden" name="preset_image" id="presetImageInput">
+              
+              <!-- Image Preview Box -->
+              <div id="imagePreviewBox" style="display:none; margin-top:12px; width:100%; height:180px; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-color);">
+                <img id="imagePreviewImg" src="" style="width:100%; height:100%; object-fit:cover;" alt="Preview">
+              </div>
+
+              <!-- Quick Demo Photo Presets -->
+              <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Or quick sample photo:</span>
+                <button type="button" class="btn btn-outline btn-sm" onclick="selectPresetImage('https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80')">Books</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="selectPresetImage('https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=600&q=80')">Jacket</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="selectPresetImage('https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80')">Keyboard</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="selectPresetImage('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')">Armchair</button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+              <a href="{{ url_for('products') }}" class="btn btn-outline">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-check"></i> Submit & Publish Listing
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

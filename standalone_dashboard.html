@@ -1,0 +1,4901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REUSE — Smart Reuse & Recycling Management System</title>
+  <meta name="description" content="Community platform connecting people with unused products to reduce waste, donate, exchange, and promote sustainability.">
+
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Canvas Confetti for celebratory donation/exchange actions -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      /* Primary Eco Green Palette */
+      --primary: #16a34a;
+      --primary-hover: #15803d;
+      --primary-dark: #14532d;
+      --primary-light: #22c55e;
+      --primary-subtle: #dcfce7;
+      --primary-gradient: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+      --emerald-gradient: linear-gradient(135deg, #10b981 0%, #047857 100%);
+
+      /* Accents */
+      --accent-blue: #0284c7;
+      --accent-blue-subtle: #e0f2fe;
+      --accent-amber: #d97706;
+      --accent-amber-subtle: #fef3c7;
+      --accent-rose: #e11d48;
+      --accent-rose-subtle: #ffe4e6;
+      --accent-purple: #7c3aed;
+      --accent-purple-subtle: #ede9fe;
+
+      /* Neutrals & Backgrounds (Clean, White, Light Grey) */
+      --bg-body: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-subtle-hover: #e2e8f0;
+      --border-color: #e2e8f0;
+      --border-focus: #86efac;
+
+      /* Typography */
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --text-on-primary: #ffffff;
+
+      /* Shadows & Radii */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      --shadow-glow: 0 4px 20px rgba(22, 163, 74, 0.18);
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+
+      /* Transitions */
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --sidebar-width: 270px;
+      --sidebar-collapsed-width: 80px;
+    }
+
+    /* Dark Mode variables if user toggles */
+    body.dark-mode {
+      --bg-body: #0b1319;
+      --bg-sidebar: #111d24;
+      --bg-card: #15242c;
+      --bg-subtle: #1c2e38;
+      --bg-subtle-hover: #233a46;
+      --border-color: #233a46;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-light: #64748b;
+      --primary-subtle: #064e3b;
+      --accent-blue-subtle: #082f49;
+      --accent-amber-subtle: #451a03;
+      --accent-rose-subtle: #4c0519;
+      --accent-purple-subtle: #2e1065;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-body);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: var(--radius-full);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* =========================================================
+       LAYOUT ARCHITECTURE
+    ========================================================= */
+    .app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .app-sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+      transition: var(--transition);
+      z-index: 100;
+      position: relative;
+    }
+
+    .app-sidebar.collapsed {
+      width: var(--sidebar-collapsed-width);
+    }
+
+    .sidebar-brand {
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.35rem;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+
+    .app-sidebar.collapsed .brand-text {
+      opacity: 0;
+      pointer-events: none;
+      display: none;
+    }
+
+    .brand-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title span {
+      color: var(--primary);
+    }
+
+    .brand-tag {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Sidebar Navigation Links */
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-light);
+      letter-spacing: 0.08em;
+      padding: 12px 12px 6px 12px;
+      white-space: nowrap;
+    }
+
+    .app-sidebar.collapsed .nav-section-title {
+      display: none;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      border: 1px solid transparent;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .nav-item:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .nav-item.active {
+      background-color: var(--primary-subtle);
+      color: var(--primary-dark);
+      border-color: rgba(22, 163, 74, 0.2);
+    }
+
+    body.dark-mode .nav-item.active {
+      color: #86efac;
+      border-color: rgba(74, 222, 128, 0.3);
+    }
+
+    .nav-item i {
+      font-size: 1.15rem;
+      width: 22px;
+      text-align: center;
+      color: inherit;
+      transition: transform 0.2s;
+    }
+
+    .nav-item:hover i {
+      transform: scale(1.1);
+    }
+
+    .nav-item .nav-label {
+      flex: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .app-sidebar.collapsed .nav-label {
+      display: none;
+    }
+
+    .nav-badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      background-color: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .nav-badge.amber {
+      background-color: var(--accent-amber);
+    }
+
+    .app-sidebar.collapsed .nav-badge {
+      display: none;
+    }
+
+    /* Sidebar Footer / Eco Widget */
+    .sidebar-footer {
+      padding: 14px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .eco-level-card {
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(16, 185, 129, 0.12) 100%);
+      border: 1px solid rgba(22, 163, 74, 0.2);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .app-sidebar.collapsed .eco-level-card {
+      display: none;
+    }
+
+    .eco-level-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    body.dark-mode .eco-level-header {
+      color: #86efac;
+    }
+
+    .eco-progress-bar {
+      height: 6px;
+      background-color: rgba(22, 163, 74, 0.2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .eco-progress-fill {
+      height: 100%;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-full);
+      width: 78%;
+      transition: width 0.6s ease;
+    }
+
+    .eco-level-stat {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* MAIN CONTENT AREA */
+    .app-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-body);
+      position: relative;
+    }
+
+    /* TOP NAVBAR */
+    .app-header {
+      height: 72px;
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      max-width: 580px;
+    }
+
+    .btn-toggle-sidebar {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .btn-toggle-sidebar:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    /* Global Search */
+    .search-bar-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      pointer-events: none;
+      font-size: 0.95rem;
+    }
+
+    .global-search-input {
+      width: 100%;
+      padding: 10px 14px 10px 40px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-subtle);
+      font-size: 0.9rem;
+      color: var(--text-main);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .global-search-input:focus {
+      background-color: var(--bg-card);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Live sustainability ticker chip */
+    .live-impact-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background-color: var(--primary-subtle);
+      color: var(--primary-dark);
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid rgba(22, 163, 74, 0.25);
+    }
+    body.dark-mode .live-impact-chip {
+      color: #86efac;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .header-action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .header-action-btn:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .notification-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 9px;
+      height: 9px;
+      background-color: var(--accent-rose);
+      border: 2px solid var(--bg-card);
+      border-radius: 50%;
+    }
+
+    /* User Profile Chip */
+    .user-profile-menu {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 12px 5px 6px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      background-color: var(--bg-card);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .user-profile-menu:hover {
+      background-color: var(--bg-subtle);
+    }
+
+    .user-avatar-img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary);
+    }
+
+    .user-info-text {
+      text-align: left;
+      line-height: 1.2;
+    }
+
+    .user-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .user-role-badge {
+      font-size: 0.68rem;
+      color: var(--primary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Dropdown Menus */
+    .dropdown-box {
+      position: absolute;
+      top: 110%;
+      right: 0;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xl);
+      min-width: 260px;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      overflow: hidden;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .dropdown-box.show {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-item {
+      padding: 11px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .dropdown-item:hover {
+      background-color: var(--bg-subtle);
+      color: var(--primary);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background-color: var(--border-color);
+      margin: 4px 0;
+    }
+
+    /* SCROLLABLE VIEW CONTAINER */
+    .content-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    .view-section {
+      display: none;
+      animation: viewSlideIn 0.25s ease-out;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes viewSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #15803d 0%, #047857 100%);
+      box-shadow: 0 6px 18px rgba(22, 163, 74, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border-color: var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--bg-subtle);
+      border-color: var(--text-muted);
+    }
+
+    .btn-outline-primary {
+      background-color: transparent;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline-primary:hover {
+      background-color: var(--primary-subtle);
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-danger {
+      background-color: var(--accent-rose);
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background-color: #be123c;
+    }
+
+    /* Badges & Chips */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-donation {
+      background-color: var(--primary-subtle);
+      color: var(--primary-dark);
+      border: 1px solid rgba(22, 163, 74, 0.3);
+    }
+    body.dark-mode .badge-donation {
+      color: #86efac;
+    }
+
+    .badge-exchange {
+      background-color: var(--accent-blue-subtle);
+      color: var(--accent-blue);
+      border: 1px solid rgba(2, 132, 199, 0.3);
+    }
+
+    .badge-condition-new {
+      background-color: #ecfdf5;
+      color: #059669;
+    }
+    .badge-condition-good {
+      background-color: #f0fdf4;
+      color: #16a34a;
+    }
+    .badge-condition-used {
+      background-color: #fefce8;
+      color: #ca8a04;
+    }
+
+    .badge-status-available {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+    .badge-status-requested {
+      background-color: #fef3c7;
+      color: #b45309;
+    }
+    .badge-status-reused {
+      background-color: #f1f5f9;
+      color: #475569;
+    }
+
+    /* Common Card Styles */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: rgba(22, 163, 74, 0.3);
+    }
+
+    .card-header-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title i {
+      color: var(--primary);
+    }
+
+    /* =========================================================
+       SECTION 1 & 3: DASHBOARD OVERVIEW & HERO BANNER
+    ========================================================= */
+    .hero-banner {
+      background: linear-gradient(135deg, #14532d 0%, #16a34a 60%, #059669 100%);
+      border-radius: var(--radius-xl);
+      padding: 34px 40px;
+      color: #ffffff;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      right: -40px;
+      bottom: -60px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-banner-content {
+      position: relative;
+      z-index: 2;
+      max-width: 680px;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+    }
+
+    .hero-title {
+      font-size: 2.1rem;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      opacity: 0.92;
+      margin-bottom: 22px;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .hero-banner .btn-white {
+      background-color: #ffffff;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    .hero-banner .btn-white:hover {
+      background-color: #f1f5f9;
+      transform: translateY(-2px);
+    }
+
+    .hero-banner .btn-glass {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #ffffff;
+    }
+
+    .hero-banner .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* STATS GRID (5 Required + 2 Impact Bonus) */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      line-height: 1;
+    }
+
+    .stat-trend {
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-trend.up {
+      color: var(--primary);
+    }
+
+    .stat-trend.neutral {
+      color: var(--accent-blue);
+    }
+
+    .stat-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .stat-icon-green {
+      background-color: var(--primary-subtle);
+      color: var(--primary);
+    }
+
+    .stat-icon-emerald {
+      background-color: #d1fae5;
+      color: #059669;
+    }
+
+    .stat-icon-blue {
+      background-color: var(--accent-blue-subtle);
+      color: var(--accent-blue);
+    }
+
+    .stat-icon-amber {
+      background-color: var(--accent-amber-subtle);
+      color: var(--accent-amber);
+    }
+
+    .stat-icon-purple {
+      background-color: var(--accent-purple-subtle);
+      color: var(--accent-purple);
+    }
+
+    /* OVERVIEW DASHBOARD TWO-COLUMN LAYOUT */
+    .dashboard-two-col {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 1080px) {
+      .dashboard-two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* RECENT ACTIVITIES LIST */
+    .activity-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .activity-item:hover {
+      background-color: var(--bg-subtle);
+      border-color: var(--border-color);
+    }
+
+    .activity-icon-bubble {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .activity-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .activity-time {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+
+    /* =========================================================
+       SECTION 4: PRODUCT MANAGEMENT & BROWSE
+    ========================================================= */
+    .filter-panel {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .filter-row-top {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-search-box {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .category-pills-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+
+    .category-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border-radius: var(--radius-full);
+      background-color: var(--bg-subtle);
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .category-pill:hover {
+      background-color: var(--bg-subtle-hover);
+      color: var(--text-main);
+    }
+
+    .category-pill.active {
+      background-color: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+    }
+
+    .filter-selects-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .custom-select {
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.86rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .custom-select:focus {
+      border-color: var(--primary);
+    }
+
+    /* PRODUCT GRID */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+      gap: 22px;
+    }
+
+    .product-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      border-color: rgba(22, 163, 74, 0.35);
+    }
+
+    .product-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      background-color: var(--bg-subtle);
+    }
+
+    .product-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .product-card:hover .product-img {
+      transform: scale(1.05);
+    }
+
+    .product-badges-top {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .product-badges-top > * {
+      pointer-events: auto;
+    }
+
+    .product-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 10px;
+    }
+
+    .product-cat-tag {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+    }
+
+    .product-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-desc {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.5em;
+    }
+
+    .product-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color);
+      margin-top: auto;
+    }
+
+    .product-location {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .product-location i {
+      color: var(--accent-rose);
+    }
+
+    .product-footer-actions {
+      padding: 14px 18px;
+      background-color: var(--bg-subtle);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 10px;
+    }
+
+    .product-footer-actions .btn {
+      flex: 1;
+    }
+
+    /* =========================================================
+       SECTION 5: ADD PRODUCT SECTION
+    ========================================================= */
+    .form-container-card {
+      max-width: 860px;
+      margin: 0 auto;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-label .required {
+      color: var(--accent-rose);
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.92rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+    }
+
+    .form-textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    /* Drop Zone for Image Upload */
+    .image-dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      background-color: var(--bg-subtle);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .image-dropzone:hover, .image-dropzone.dragover {
+      border-color: var(--primary);
+      background-color: var(--primary-subtle);
+    }
+
+    .dropzone-icon {
+      font-size: 2.2rem;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+
+    .dropzone-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .dropzone-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .image-preview-box {
+      margin-top: 12px;
+      display: none;
+      position: relative;
+      width: 100%;
+      height: 180px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .image-preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .btn-remove-preview {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .btn-remove-preview:hover {
+      background: var(--accent-rose);
+    }
+
+    /* Radio buttons custom cards (Donation vs Exchange) */
+    .radio-card-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .radio-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      background-color: var(--bg-card);
+    }
+
+    .radio-card:hover {
+      border-color: var(--primary);
+      background-color: var(--bg-subtle);
+    }
+
+    .radio-card.active {
+      border-color: var(--primary);
+      background-color: var(--primary-subtle);
+    }
+
+    .radio-card input[type="radio"] {
+      accent-color: var(--primary);
+      width: 18px;
+      height: 18px;
+    }
+
+    .radio-card-label {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .radio-card-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================
+       SECTION 6: ANALYTICS DASHBOARD
+    ========================================================= */
+    .charts-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 992px) {
+      .charts-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-container-box {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+
+    /* Impact Key Highlights Row */
+    .impact-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .impact-metric-pill {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .impact-icon-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--primary-subtle);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    /* =========================================================
+       SECTION 8: ADMIN DASHBOARD
+    ========================================================= */
+    .admin-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 24px 30px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .admin-tag {
+      background-color: var(--accent-purple);
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .admin-tabs-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .admin-tab-btn {
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .admin-tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .admin-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Tables */
+    .data-table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
+    }
+
+    .data-table th {
+      background-color: var(--bg-subtle);
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    .data-table tbody tr:hover {
+      background-color: var(--bg-subtle);
+    }
+
+    /* User table avatar cell */
+    .user-table-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-table-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-card {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      position: relative;
+      animation: modalSlideUp 0.25s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 22px 26px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .modal-close-btn:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      padding: 26px;
+    }
+
+    .modal-footer {
+      padding: 18px 26px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background-color: var(--bg-subtle);
+    }
+
+    /* TOAST NOTIFICATION */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      pointer-events: auto;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-xl);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      max-width: 420px;
+      animation: toastSlideIn 0.3s ease-out;
+      transition: var(--transition);
+    }
+
+    .toast-item.error {
+      border-left-color: var(--accent-rose);
+    }
+
+    .toast-item.info {
+      border-left-color: var(--accent-blue);
+    }
+
+    @keyframes toastSlideIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast-icon {
+      font-size: 1.2rem;
+      color: var(--primary);
+    }
+
+    .toast-item.error .toast-icon {
+      color: var(--accent-rose);
+    }
+
+    .toast-item.info .toast-icon {
+      color: var(--accent-blue);
+    }
+
+    .toast-text {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* PROFILE VIEW CARDS */
+    .profile-hero {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 28px;
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(14, 165, 233, 0.08) 100%);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .profile-avatar-large {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: var(--shadow-lg);
+      object-fit: cover;
+    }
+
+    .badges-showcase {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .eco-badge-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .eco-badge-card i {
+      color: #eab308;
+      font-size: 1.1rem;
+    }
+
+    /* RESPONSIVE BREAKPOINTS */
+    @media (max-width: 900px) {
+      .app-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+      }
+      .app-sidebar.mobile-open {
+        left: 0;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+      }
+      .app-header {
+        padding: 0 16px;
+      }
+      .content-body {
+        padding: 18px;
+      }
+      .hero-banner {
+        padding: 24px;
+      }
+      .hero-title {
+        font-size: 1.6rem;
+      }
+      .live-impact-chip {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ROOT APPLICATION WRAPPER -->
+  <div class="app-container">
+
+    <!-- ==========================================
+         SIDEBAR NAVIGATION (Section 2)
+    ========================================== -->
+    <aside class="app-sidebar" id="appSidebar">
+      <!-- Brand Logo -->
+      <div class="sidebar-brand">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-recycle"></i>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">REUSE <span>•</span> Eco</div>
+          <div class="brand-tag">Smart Recycling IMS</div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Main Menu</div>
+
+        <!-- 1. Dashboard -->
+        <div class="nav-item active" data-view="dashboardView" onclick="switchView('dashboardView')">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span class="nav-label">Dashboard</span>
+        </div>
+
+        <!-- 2. Browse Products -->
+        <div class="nav-item" data-view="browseView" onclick="switchView('browseView')">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span class="nav-label">Browse Products</span>
+          <span class="nav-badge" id="sidebarProductCount">12</span>
+        </div>
+
+        <!-- 3. Add New Product -->
+        <div class="nav-item" data-view="addProductView" onclick="switchView('addProductView')">
+          <i class="fa-solid fa-circle-plus"></i>
+          <span class="nav-label">Add New Product</span>
+        </div>
+
+        <div class="nav-section-title">Community Actions</div>
+
+        <!-- 4. Donate Items -->
+        <div class="nav-item" data-view="donateView" onclick="switchView('donateView')">
+          <i class="fa-solid fa-hand-holding-heart"></i>
+          <span class="nav-label">Donate Items</span>
+        </div>
+
+        <!-- 5. Exchange Items -->
+        <div class="nav-item" data-view="exchangeView" onclick="switchView('exchangeView')">
+          <i class="fa-solid fa-repeat"></i>
+          <span class="nav-label">Exchange Items</span>
+        </div>
+
+        <!-- 6. My Requests -->
+        <div class="nav-item" data-view="myRequestsView" onclick="switchView('myRequestsView')">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <span class="nav-label">My Requests</span>
+          <span class="nav-badge amber" id="sidebarPendingCount">3</span>
+        </div>
+
+        <!-- 7. My Products -->
+        <div class="nav-item" data-view="myProductsView" onclick="switchView('myProductsView')">
+          <i class="fa-solid fa-box-archive"></i>
+          <span class="nav-label">My Products</span>
+        </div>
+
+        <div class="nav-section-title">Insights & System</div>
+
+        <!-- Analytics -->
+        <div class="nav-item" data-view="analyticsView" onclick="switchView('analyticsView')">
+          <i class="fa-solid fa-chart-line"></i>
+          <span class="nav-label">Analytics</span>
+        </div>
+
+        <!-- 8. Notifications -->
+        <div class="nav-item" data-view="notificationsView" onclick="switchView('notificationsView')">
+          <i class="fa-solid fa-bell"></i>
+          <span class="nav-label">Notifications</span>
+          <span class="nav-badge" id="sidebarNotificationCount">4</span>
+        </div>
+
+        <!-- 9. Profile -->
+        <div class="nav-item" data-view="profileView" onclick="switchView('profileView')">
+          <i class="fa-solid fa-user-gear"></i>
+          <span class="nav-label">Profile & Impact</span>
+        </div>
+
+        <!-- 8. Admin Features -->
+        <div class="nav-item" data-view="adminView" onclick="switchView('adminView')">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span class="nav-label">Admin Portal</span>
+          <span class="badge" style="background:#7c3aed;color:#fff;font-size:0.65rem;">MOD</span>
+        </div>
+
+        <!-- 10. Logout / Auth -->
+        <div class="nav-item" onclick="openAuthModal('login')">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span class="nav-label">Switch / Logout</span>
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer (Eco Tier Widget) -->
+      <div class="sidebar-footer">
+        <div class="eco-level-card">
+          <div class="eco-level-header">
+            <span><i class="fa-solid fa-leaf text-success me-1"></i> Eco Champion</span>
+            <span class="badge badge-donation">Tier 4</span>
+          </div>
+          <div class="eco-progress-bar">
+            <div class="eco-progress-fill" id="ecoTierProgress"></div>
+          </div>
+          <div class="eco-level-stat">
+            <span>1,850 Eco-Points</span>
+            <span>Next: Eco Guardian</span>
+          </div>
+        </div>
+
+        <button class="btn btn-outline btn-sm w-100" onclick="resetSampleData()" title="Reset to fresh demo sample data">
+          <i class="fa-solid fa-rotate-left"></i> Reset Demo Data
+        </button>
+      </div>
+    </aside>
+
+    <!-- ==========================================
+         MAIN CONTENT SHELL
+    ========================================== -->
+    <main class="app-main">
+
+      <!-- TOP HEADER BAR -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="btn-toggle-sidebar" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle Navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <div class="search-bar-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" class="global-search-input" id="globalSearchInput" placeholder="Search clothes, electronics, books, furniture or location..." onkeyup="handleGlobalSearch(event)">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Live Sustainability Ticker -->
+          <div class="live-impact-chip" title="Live Community Footprint">
+            <span class="live-dot"></span>
+            <span id="headerLiveTicker">🌱 14,820 kg Waste Diverted</span>
+          </div>
+
+          <!-- Quick Add Button -->
+          <button class="btn btn-primary btn-sm d-none d-md-inline-flex" onclick="switchView('addProductView')">
+            <i class="fa-solid fa-plus"></i> List Item
+          </button>
+
+          <!-- Notification Bell -->
+          <button class="header-action-btn" onclick="toggleNotificationDropdown()" aria-label="Notifications">
+            <i class="fa-regular fa-bell"></i>
+            <span class="notification-dot" id="headerNotificationDot"></span>
+          </button>
+
+          <!-- Dark / Light Theme Toggle -->
+          <button class="header-action-btn" onclick="toggleDarkMode()" aria-label="Toggle Theme">
+            <i class="fa-solid fa-moon" id="themeToggleIcon"></i>
+          </button>
+
+          <!-- User Menu Dropdown -->
+          <div class="user-profile-menu" onclick="toggleUserDropdown()">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="user-avatar-img" id="headerUserAvatar">
+            <div class="user-info-text d-none d-sm-block">
+              <div class="user-name" id="headerUserName">Sarah Green</div>
+              <div class="user-role-badge" id="headerUserRole">Eco Champion</div>
+            </div>
+            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--text-light);"></i>
+
+            <!-- Dropdown Menu -->
+            <div class="dropdown-box" id="userDropdownMenu">
+              <div class="dropdown-item" onclick="switchView('profileView')">
+                <i class="fa-regular fa-user"></i> My Profile & Impact
+              </div>
+              <div class="dropdown-item" onclick="switchView('myProductsView')">
+                <i class="fa-solid fa-box-open"></i> My Listings
+              </div>
+              <div class="dropdown-item" onclick="switchView('myRequestsView')">
+                <i class="fa-solid fa-handshake-angle"></i> My Requests
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item" onclick="toggleUserRole()">
+                <i class="fa-solid fa-user-shield"></i> <span id="roleSwitchText">Switch to Admin Mode</span>
+              </div>
+              <div class="dropdown-item text-danger" onclick="openAuthModal('login')">
+                <i class="fa-solid fa-right-from-bracket"></i> Sign In / Out
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- NOTIFICATIONS DROPDOWN PREVIEW -->
+      <div class="dropdown-box" id="notificationDropdownMenu" style="position: absolute; top: 72px; right: 120px; width: 340px; max-height: 400px;">
+        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+          <strong style="font-size: 0.9rem;">Notifications</strong>
+          <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="markAllNotificationsRead()">Mark all read</span>
+        </div>
+        <div id="headerNotificationList" style="max-height: 300px; overflow-y: auto;">
+          <!-- Injected via JS -->
+        </div>
+        <div style="padding: 10px; text-align: center; border-top: 1px solid var(--border-color);">
+          <a href="javascript:void(0)" onclick="switchView('notificationsView')" style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">View All Notifications</a>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEWS CONTAINER (SPA SWITCHING)
+      ========================================== -->
+      <div class="content-body" id="contentBody">
+
+        <!-- ==========================================
+             VIEW 1: DASHBOARD OVERVIEW (Section 1 & 3 & 7)
+        ========================================== -->
+        <section class="view-section active" id="dashboardView">
+          
+          <!-- Hero Banner -->
+          <div class="hero-banner">
+            <div class="hero-banner-content">
+              <div class="hero-pill">
+                <i class="fa-solid fa-seedling"></i> Zero Waste • Circular Community
+              </div>
+              <h1 class="hero-title">Give Unused Items a Second Life, Reduce Landfill Waste</h1>
+              <p class="hero-desc">
+                Welcome to <strong>REUSE</strong>. Connect with your local neighborhood to donate, exchange, and request clothing, books, electronics, and home goods for a sustainable future.
+              </p>
+              <div class="hero-actions">
+                <button class="btn btn-white" onclick="switchView('browseView')">
+                  <i class="fa-solid fa-magnifying-glass"></i> Browse Products
+                </button>
+                <button class="btn btn-glass" onclick="switchView('addProductView')">
+                  <i class="fa-solid fa-plus-circle"></i> Donate or List Item
+                </button>
+                <button class="btn btn-glass" onclick="switchView('analyticsView')">
+                  <i class="fa-solid fa-chart-simple"></i> View Eco Impact
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Five Key Metric Cards (+ 2 Sustainability Footprints) -->
+          <div class="stats-grid">
+            <!-- 1. Total Products Available -->
+            <div class="stat-card" onclick="switchView('browseView')">
+              <div class="stat-info">
+                <span class="stat-label">Products Available</span>
+                <span class="stat-value" id="statProductsAvailable">142</span>
+                <span class="stat-trend up">
+                  <i class="fa-solid fa-arrow-trend-up"></i> +12 this week
+                </span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-green">
+                <i class="fa-solid fa-boxes-packing"></i>
+              </div>
+            </div>
+
+            <!-- 2. Total Products Reused -->
+            <div class="stat-card" onclick="switchView('analyticsView')">
+              <div class="stat-info">
+                <span class="stat-label">Products Reused</span>
+                <span class="stat-value" id="statProductsReused">856</span>
+                <span class="stat-trend up">
+                  <i class="fa-solid fa-circle-check"></i> 86% success rate
+                </span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-emerald">
+                <i class="fa-solid fa-recycle"></i>
+              </div>
+            </div>
+
+            <!-- 3. Total Donations -->
+            <div class="stat-card" onclick="switchView('donateView')">
+              <div class="stat-info">
+                <span class="stat-label">Total Donations</span>
+                <span class="stat-value" id="statTotalDonations">524</span>
+                <span class="stat-trend up">
+                  <i class="fa-solid fa-heart"></i> +28 new donors
+                </span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-blue">
+                <i class="fa-solid fa-hand-holding-heart"></i>
+              </div>
+            </div>
+
+            <!-- 4. Pending Requests -->
+            <div class="stat-card" onclick="switchView('myRequestsView')">
+              <div class="stat-info">
+                <span class="stat-label">Pending Requests</span>
+                <span class="stat-value" id="statPendingRequests">19</span>
+                <span class="stat-trend neutral">
+                  <i class="fa-solid fa-clock"></i> Needs attention
+                </span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-amber">
+                <i class="fa-solid fa-hourglass-half"></i>
+              </div>
+            </div>
+
+            <!-- 5. Total Registered Users -->
+            <div class="stat-card" onclick="switchView('adminView')">
+              <div class="stat-info">
+                <span class="stat-label">Registered Users</span>
+                <span class="stat-value" id="statRegisteredUsers">1,280</span>
+                <span class="stat-trend up">
+                  <i class="fa-solid fa-users"></i> Eco community
+                </span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-purple">
+                <i class="fa-solid fa-users"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Environmental Impact Highlights -->
+          <div class="impact-metrics-row">
+            <div class="impact-metric-pill">
+              <div class="impact-icon-circle">
+                <i class="fa-solid fa-weight-hanging"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Landfill Waste Diverted</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary);" id="statWasteDiverted">14,820 kg</div>
+              </div>
+            </div>
+
+            <div class="impact-metric-pill">
+              <div class="impact-icon-circle" style="background:#e0f2fe; color:#0284c7;">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">CO₂ Emissions Avoided</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #0284c7;" id="statCo2Saved">22.4 Tons</div>
+              </div>
+            </div>
+
+            <div class="impact-metric-pill">
+              <div class="impact-icon-circle" style="background:#fef3c7; color:#d97706;">
+                <i class="fa-solid fa-handshake"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Active Barter Exchanges</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #d97706;" id="statExchangeCount">332 Swaps</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 7: Recent Activities & Featured Listings Two-Column -->
+          <div class="dashboard-two-col">
+            <!-- Left: Recent Activities Timeline (Section 7) -->
+            <div class="card">
+              <div class="card-header-flex">
+                <div class="card-title">
+                  <i class="fa-solid fa-clock-rotate-left"></i> Recent Activities
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-outline btn-sm active" onclick="filterActivityLog('all', this)">All</button>
+                  <button class="btn btn-outline btn-sm" onclick="filterActivityLog('donation', this)">Donations</button>
+                  <button class="btn btn-outline btn-sm" onclick="filterActivityLog('exchange', this)">Exchanges</button>
+                  <button class="btn btn-outline btn-sm" onclick="filterActivityLog('request', this)">Requests</button>
+                </div>
+              </div>
+
+              <div class="activity-timeline" id="recentActivitiesList">
+                <!-- Dynamically populated via JS -->
+              </div>
+            </div>
+
+            <!-- Right: Quick Impact Summary & Action Shortcuts -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+              
+              <!-- Quick Mini Chart: Category Distribution -->
+              <div class="card">
+                <div class="card-header-flex">
+                  <div class="card-title" style="font-size: 1rem;">
+                    <i class="fa-solid fa-chart-pie"></i> Category Share
+                  </div>
+                  <a href="javascript:void(0)" onclick="switchView('analyticsView')" style="font-size: 0.8rem; color: var(--primary); font-weight: 600;">Full Analytics &rarr;</a>
+                </div>
+                <div style="height: 180px; position: relative;">
+                  <canvas id="miniCategoryChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Community Challenge Card -->
+              <div class="card" style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
+                <div class="card-title" style="font-size: 1rem; margin-bottom: 8px;">
+                  <i class="fa-solid fa-bullseye"></i> November Reuse Goal
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                  Target: 1,000 items diverted from municipal landfills before December.
+                </p>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px;">
+                  <span>856 / 1,000 items</span>
+                  <span style="color: var(--primary);">85.6%</span>
+                </div>
+                <div class="eco-progress-bar" style="height: 8px;">
+                  <div class="eco-progress-fill" style="width: 85.6%;"></div>
+                </div>
+                <button class="btn btn-outline-primary btn-sm mt-3 w-100" onclick="switchView('addProductView')">
+                  <i class="fa-solid fa-plus"></i> Contribute an Item
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Quick Preview: Recently Uploaded Products Grid -->
+          <div class="card">
+            <div class="card-header-flex">
+              <div class="card-title">
+                <i class="fa-solid fa-sparkles text-success"></i> Recently Listed Products
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="switchView('browseView')">
+                View All Catalog &rarr;
+              </button>
+            </div>
+            <div class="products-grid" id="dashboardRecentProductsGrid">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==========================================
+             VIEW 2: BROWSE PRODUCTS (Section 4)
+        ========================================== -->
+        <section class="view-section" id="browseView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2>Browse Available Products</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Find reusable clothes, electronics, books, furniture, and tools in your local neighborhood.</p>
+            </div>
+            <button class="btn btn-primary" onclick="switchView('addProductView')">
+              <i class="fa-solid fa-plus"></i> Post a Product
+            </button>
+          </div>
+
+          <!-- Section 4 & 9: Filter & Search Panel -->
+          <div class="filter-panel">
+            <div class="filter-row-top">
+              <div class="filter-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" class="global-search-input" id="browseSearchInput" placeholder="Filter by product name, description or city..." oninput="applyFilters()">
+              </div>
+
+              <div class="filter-selects-group">
+                <!-- Condition Filter -->
+                <select class="custom-select" id="filterCondition" onchange="applyFilters()">
+                  <option value="all">Condition: All</option>
+                  <option value="New">Brand New</option>
+                  <option value="Good">Good Condition</option>
+                  <option value="Used">Used / Functional</option>
+                </select>
+
+                <!-- Listing Type: Donation vs Exchange -->
+                <select class="custom-select" id="filterType" onchange="applyFilters()">
+                  <option value="all">Type: All Listings</option>
+                  <option value="donation">Free Donation Only</option>
+                  <option value="exchange">Exchange Only</option>
+                </select>
+
+                <!-- Availability -->
+                <select class="custom-select" id="filterAvailability" onchange="applyFilters()">
+                  <option value="Available">Status: Available</option>
+                  <option value="all">All (Inc. Requested)</option>
+                  <option value="Reused">Reused History</option>
+                </select>
+
+                <!-- Sort -->
+                <select class="custom-select" id="filterSort" onchange="applyFilters()">
+                  <option value="newest">Sort: Newest First</option>
+                  <option value="popular">Sort: Most Requested</option>
+                  <option value="weight">Sort: Heaviest (Eco)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Category Pills Bar -->
+            <div class="category-pills-scroll" id="categoryPillsContainer">
+              <div class="category-pill active" onclick="selectCategoryFilter('all', this)">
+                <i class="fa-solid fa-border-all"></i> All Categories
+              </div>
+              <div class="category-pill" onclick="selectCategoryFilter('Clothes', this)">
+                <i class="fa-solid fa-shirt"></i> Clothes & Fashion
+              </div>
+              <div class="category-pill" onclick="selectCategoryFilter('Books', this)">
+                <i class="fa-solid fa-book-open"></i> Books & Study
+              </div>
+              <div class="category-pill" onclick="selectCategoryFilter('Electronics', this)">
+                <i class="fa-solid fa-laptop"></i> Electronics & Tech
+              </div>
+              <div class="category-pill" onclick="selectCategoryFilter('Furniture', this)">
+                <i class="fa-solid fa-couch"></i> Furniture & Decor
+              </div>
+              <div class="category-pill" onclick="selectCategoryFilter('Household', this)">
+                <i class="fa-solid fa-blender"></i> Household & Kitchen
+              </div>
+              <div class="category-pill" onclick="selectCategoryFilter('Toys', this)">
+                <i class="fa-solid fa-gamepad"></i> Toys & Sports
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Count Summary -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div style="font-size: 0.88rem; color: var(--text-muted);" id="browseResultsCount">Showing 12 items</div>
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">
+              <i class="fa-solid fa-filter-circle-xmark"></i> Clear Filters
+            </button>
+          </div>
+
+          <!-- Main Products Grid -->
+          <div class="products-grid" id="mainProductsGrid">
+            <!-- Dynamically injected via JS -->
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 3: ADD NEW PRODUCT (Section 5)
+        ========================================== -->
+        <section class="view-section" id="addProductView">
+          <div class="form-container-card">
+            <div style="text-align: center; margin-bottom: 28px;">
+              <div class="hero-pill" style="background: var(--primary-subtle); color: var(--primary-dark);">
+                <i class="fa-solid fa-seedling"></i> Circular Listing Form
+              </div>
+              <h2>List an Item for Reuse</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Don't throw away what someone else can cherish. Share details, photos, and give your item a second life.
+              </p>
+            </div>
+
+            <form id="addProductForm" onsubmit="handleProductSubmit(event)">
+              <!-- Row 1: Product Name & Category -->
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="formProdName">
+                    Product Name <span class="required">*</span>
+                  </label>
+                  <input type="text" class="form-input" id="formProdName" placeholder="e.g. Ergonomic Office Desk Chair" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="formProdCategory">
+                    Category <span class="required">*</span>
+                  </label>
+                  <select class="form-select" id="formProdCategory" required>
+                    <option value="" disabled selected>Select a category...</option>
+                    <option value="Clothes">Clothes & Apparel</option>
+                    <option value="Books">Books & Stationery</option>
+                    <option value="Electronics">Electronics & Gadgets</option>
+                    <option value="Furniture">Furniture & Decor</option>
+                    <option value="Household">Household & Kitchen Appliances</option>
+                    <option value="Toys">Toys & Sports Equipment</option>
+                    <option value="Other">Other Items</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row 2: Listing Type & Condition -->
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">
+                    Listing Type <span class="required">*</span>
+                  </label>
+                  <div class="radio-card-group">
+                    <label class="radio-card active" id="radioTypeDonation" onclick="setListingTypeRadio('donation')">
+                      <input type="radio" name="listingType" value="donation" checked>
+                      <div>
+                        <div class="radio-card-label">Free Donation</div>
+                        <div class="radio-card-desc">Give away for free ($0)</div>
+                      </div>
+                    </label>
+
+                    <label class="radio-card" id="radioTypeExchange" onclick="setListingTypeRadio('exchange')">
+                      <input type="radio" name="listingType" value="exchange">
+                      <div>
+                        <div class="radio-card-label">Barter Exchange</div>
+                        <div class="radio-card-desc">Trade for another item</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="formProdCondition">
+                    Item Condition <span class="required">*</span>
+                  </label>
+                  <select class="form-select" id="formProdCondition" required>
+                    <option value="New">Brand New (Unopened / Tagged)</option>
+                    <option value="Good" selected>Good Condition (Gently used, fully working)</option>
+                    <option value="Used">Used / Functional (Cosmetic wear, works fine)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Conditional Exchange Preference Field -->
+              <div class="form-group" id="exchangeDetailsGroup" style="display: none;">
+                <label class="form-label" for="formExchangeLookingFor">
+                  What would you like in exchange?
+                </label>
+                <input type="text" class="form-input" id="formExchangeLookingFor" placeholder="e.g. Science textbooks, guitar, or blender">
+              </div>
+
+              <!-- Row 3: Location & Approx Weight -->
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="formProdLocation">
+                    Pickup Location / Neighborhood <span class="required">*</span>
+                  </label>
+                  <input type="text" class="form-input" id="formProdLocation" placeholder="e.g. Green Park, Sector 4, North District" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="formProdWeight">
+                    Estimated Weight in kg (For Eco Impact)
+                  </label>
+                  <input type="number" step="0.5" class="form-input" id="formProdWeight" placeholder="e.g. 3.5 kg" value="2.0">
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label class="form-label" for="formProdDesc">
+                  Product Description <span class="required">*</span>
+                </label>
+                <textarea class="form-textarea" id="formProdDesc" placeholder="Describe the item's features, dimensions, age, why you are passing it along, and any pickup instructions..." required></textarea>
+              </div>
+
+              <!-- Image Upload Section with Dropzone -->
+              <div class="form-group">
+                <label class="form-label">
+                  Product Image <span class="required">*</span>
+                </label>
+                <div class="image-dropzone" id="imageDropzone" onclick="document.getElementById('productImageFileInput').click()">
+                  <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                  <div class="dropzone-title">Click to upload or drag & drop image here</div>
+                  <div class="dropzone-sub">Supports PNG, JPG, WEBP up to 5MB</div>
+                  <input type="file" id="productImageFileInput" accept="image/*" style="display: none;" onchange="handleImageFileSelect(event)">
+                </div>
+
+                <!-- Image Preview Area -->
+                <div class="image-preview-box" id="imagePreviewBox">
+                  <img src="" alt="Preview" class="image-preview-img" id="imagePreviewImg">
+                  <button type="button" class="btn-remove-preview" onclick="removeImagePreview(event)" title="Remove Image">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+
+                <!-- Quick Presets for Demo -->
+                <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Or quick sample photo:</span>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setPresetImage('https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80', 'Books')">Books</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setPresetImage('https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=600&q=80', 'Clothes')">Jacket</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setPresetImage('https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80', 'Electronics')">Keyboard</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setPresetImage('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80', 'Furniture')">Armchair</button>
+                </div>
+              </div>
+
+              <!-- Submit Buttons -->
+              <div style="display: flex; gap: 14px; justify-content: flex-end; margin-top: 28px;">
+                <button type="button" class="btn btn-outline" onclick="switchView('browseView')">
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnSubmitProduct">
+                  <i class="fa-solid fa-check"></i> Submit & Publish Listing
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 4: DONATE ITEMS (Dedicated)
+        ========================================== -->
+        <section class="view-section" id="donateView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2><i class="fa-solid fa-hand-holding-heart text-success me-2"></i> Free Community Donations</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">
+                100% free items offered by generous neighbors to eliminate waste and support families in need.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="setQuickDonationMode()">
+              <i class="fa-solid fa-gift"></i> Donate a New Item
+            </button>
+          </div>
+
+          <div class="stats-grid" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Available Free Items</span>
+                <span class="stat-value" id="donateStatsAvailable">84</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-green"><i class="fa-solid fa-gift"></i></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Donations Completed</span>
+                <span class="stat-value" id="donateStatsCompleted">524</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-emerald"><i class="fa-solid fa-circle-check"></i></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Beneficiary Families</span>
+                <span class="stat-value">310+</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-blue"><i class="fa-solid fa-house-chimney-user"></i></div>
+            </div>
+          </div>
+
+          <!-- Donation Items Grid -->
+          <div class="products-grid" id="donationProductsGrid">
+            <!-- Filtered for donation: true -->
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 5: EXCHANGE ITEMS (Dedicated)
+        ========================================== -->
+        <section class="view-section" id="exchangeView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2><i class="fa-solid fa-repeat text-primary me-2"></i> Circular Item Exchanges (Barter)</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Trade items you no longer use for things you actually need. Zero cash spent, 100% circular economy.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="setQuickExchangeMode()">
+              <i class="fa-solid fa-plus"></i> Propose New Exchange
+            </button>
+          </div>
+
+          <!-- Exchanges Grid -->
+          <div class="products-grid" id="exchangeProductsGrid">
+            <!-- Filtered for type: exchange -->
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 6: MY REQUESTS (Section 9)
+        ========================================== -->
+        <section class="view-section" id="myRequestsView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2>My Requests & Interactions</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Track the status of items you've requested or requests received for your posted items.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm active" id="btnTabSentRequests" onclick="switchRequestTab('sent')">
+                <i class="fa-solid fa-paper-plane"></i> Sent Requests (<span id="countSentRequests">0</span>)
+              </button>
+              <button class="btn btn-outline btn-sm" id="btnTabReceivedRequests" onclick="switchRequestTab('received')">
+                <i class="fa-solid fa-inbox"></i> Incoming Requests (<span id="countReceivedRequests">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="data-table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Other Party</th>
+                    <th>Date Requested</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 7: MY PRODUCTS
+        ========================================== -->
+        <section class="view-section" id="myProductsView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2>My Listed Products</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Manage, update, or mark your listings as completed once handed over.</p>
+            </div>
+            <button class="btn btn-primary" onclick="switchView('addProductView')">
+              <i class="fa-solid fa-plus"></i> List Another Item
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="data-table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Condition</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="myProductsTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 8: ANALYTICS DASHBOARD (Section 6)
+        ========================================== -->
+        <section class="view-section" id="analyticsView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2><i class="fa-solid fa-chart-line text-success me-2"></i> Sustainability & Platform Analytics</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Real-time metrics measuring municipal waste reduction, community reuse trends, and donation volumes.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportAnalyticsCSV()">
+                <i class="fa-solid fa-download"></i> Export CSV Report
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 6 Charts Grid 2x2 -->
+          <div class="charts-grid-2">
+            <!-- Chart 1: Products Reused by Category -->
+            <div class="card">
+              <div class="card-header-flex">
+                <div class="card-title">
+                  <i class="fa-solid fa-chart-pie"></i> Products Reused by Category
+                </div>
+                <span class="badge badge-donation">Circular Share</span>
+              </div>
+              <div class="chart-container-box">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Monthly Donations Trend -->
+            <div class="card">
+              <div class="card-header-flex">
+                <div class="card-title">
+                  <i class="fa-solid fa-arrow-trend-up"></i> Monthly Donations & Exchanges
+                </div>
+                <span class="badge badge-exchange">2026 Trend</span>
+              </div>
+              <div class="chart-container-box">
+                <canvas id="monthlyDonationsChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 3: Total Waste Reduced (kg) -->
+            <div class="card">
+              <div class="card-header-flex">
+                <div class="card-title">
+                  <i class="fa-solid fa-dumpster-fire"></i> Total Landfill Waste Diverted (kg)
+                </div>
+                <span class="badge badge-donation">Cumulative: 14.8 Tonnes</span>
+              </div>
+              <div class="chart-container-box">
+                <canvas id="wasteReducedChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 4: Donation versus Exchange Statistics -->
+            <div class="card">
+              <div class="card-header-flex">
+                <div class="card-title">
+                  <i class="fa-solid fa-scale-balanced"></i> Donation vs. Exchange Statistics
+                </div>
+                <span class="badge" style="background:#ede9fe; color:#7c3aed;">Platform Split</span>
+              </div>
+              <div class="chart-container-box">
+                <canvas id="donationVsExchangeChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performance Breakdown Table -->
+          <div class="card">
+            <div class="card-title mb-3">
+              <i class="fa-solid fa-ranking-star"></i> Top Category Environmental Impact Breakdown
+            </div>
+            <div class="data-table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Total Items Reused</th>
+                    <th>Avg. Item Weight</th>
+                    <th>Total Waste Diverted</th>
+                    <th>Est. CO₂ Reduction</th>
+                    <th>Circulation Speed</th>
+                  </tr>
+                </thead>
+                <tbody id="analyticsCategoryTableBody">
+                  <tr>
+                    <td><strong>Electronics & Gadgets</strong></td>
+                    <td>264 units</td>
+                    <td>3.4 kg</td>
+                    <td>897.6 kg</td>
+                    <td>8,420 kg CO₂e</td>
+                    <td><span class="badge badge-donation">Very Fast (2.1 days)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Furniture & Home</strong></td>
+                    <td>198 units</td>
+                    <td>24.5 kg</td>
+                    <td>4,851.0 kg</td>
+                    <td>6,110 kg CO₂e</td>
+                    <td><span class="badge badge-exchange">Medium (4.8 days)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Clothes & Apparel</strong></td>
+                    <td>310 units</td>
+                    <td>1.2 kg</td>
+                    <td>372.0 kg</td>
+                    <td>4,650 kg CO₂e</td>
+                    <td><span class="badge badge-donation">Fast (1.8 days)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Books & Study Materials</strong></td>
+                    <td>412 units</td>
+                    <td>0.8 kg</td>
+                    <td>329.6 kg</td>
+                    <td>1,240 kg CO₂e</td>
+                    <td><span class="badge badge-donation">Fast (1.4 days)</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 9: NOTIFICATIONS
+        ========================================== -->
+        <section class="view-section" id="notificationsView">
+          <div class="card-header-flex mb-3">
+            <div>
+              <h2>Notifications & Updates</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Real-time alerts regarding item requests, donations, and sustainability achievements.</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="markAllNotificationsRead()">
+              <i class="fa-solid fa-check-double"></i> Mark All as Read
+            </button>
+          </div>
+
+          <div class="card">
+            <div id="fullNotificationsList" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 10: PROFILE & IMPACT
+        ========================================== -->
+        <section class="view-section" id="profileView">
+          <div class="profile-hero">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80" alt="Sarah Green" class="profile-avatar-large" id="profileAvatarImg">
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h2 id="profileDisplayName">Sarah Green</h2>
+                <span class="badge badge-donation" id="profileRoleBadge">Eco Champion (Tier 4)</span>
+                <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-star text-warning"></i> 4.95 Rating</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.88rem; margin: 4px 0 12px 0;">
+                <i class="fa-solid fa-location-dot text-danger me-1"></i> Green Park Eco Zone • Member since Feb 2025 • <i class="fa-solid fa-envelope ms-2 me-1"></i> sarah.green@example.org
+              </p>
+              
+              <!-- Badges Showcase -->
+              <div class="badges-showcase">
+                <div class="eco-badge-card" title="Completed over 20 donations">
+                  <i class="fa-solid fa-medal"></i> Master Giver
+                </div>
+                <div class="eco-badge-card" title="Diverted over 150kg waste">
+                  <i class="fa-solid fa-tree"></i> Forest Protector
+                </div>
+                <div class="eco-badge-card" title="Responds in under 15 minutes">
+                  <i class="fa-solid fa-bolt"></i> Fast Responder
+                </div>
+                <div class="eco-badge-card" title="Top 1% Community contributor">
+                  <i class="fa-solid fa-award"></i> Top 1% Eco Hero
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Stats Breakdown -->
+          <div class="stats-grid mb-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">My Donations</span>
+                <span class="stat-value" id="profileUserDonations">18</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-green"><i class="fa-solid fa-hand-holding-heart"></i></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">My Exchanges</span>
+                <span class="stat-value" id="profileUserExchanges">9</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-blue"><i class="fa-solid fa-repeat"></i></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Landfill Diverted</span>
+                <span class="stat-value" id="profileUserWaste">184 kg</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-emerald"><i class="fa-solid fa-scale-balanced"></i></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Eco Points</span>
+                <span class="stat-value" id="profileUserPoints">1,850</span>
+              </div>
+              <div class="stat-icon-wrapper stat-icon-purple"><i class="fa-solid fa-seedling"></i></div>
+            </div>
+          </div>
+
+          <!-- Profile Settings Form -->
+          <div class="card">
+            <div class="card-title mb-3">
+              <i class="fa-solid fa-user-pen"></i> Edit Profile Information
+            </div>
+            <form onsubmit="handleProfileUpdate(event)">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" class="form-input" id="profileInputName" value="Sarah Green" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" class="form-input" id="profileInputEmail" value="sarah.green@example.org" required>
+                </div>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Location / Neighborhood</label>
+                  <input type="text" class="form-input" id="profileInputLocation" value="Green Park Eco Zone">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone / WhatsApp for Pickup Contact</label>
+                  <input type="text" class="form-input" id="profileInputPhone" value="+1 (555) 392-8821">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Eco Bio & Motivation</label>
+                <textarea class="form-textarea" style="min-height: 80px;" id="profileInputBio">Passionate about zero-waste living and sharing quality goods with neighbours.</textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Save Profile Details
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW 11: ADMIN DASHBOARD (Section 8)
+        ========================================== -->
+        <section class="view-section" id="adminView">
+          <div class="admin-banner">
+            <div>
+              <div class="admin-tag"><i class="fa-solid fa-shield-halved"></i> Moderator & Admin Console</div>
+              <h2 style="color: #fff; margin: 8px 0 4px 0;">Platform Oversight & Governance</h2>
+              <p style="font-size: 0.85rem; opacity: 0.85; margin: 0;">Approve or reject listings, manage users, monitor community safety, and review sustainability metrics.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-sm btn-outline" style="color:#fff; border-color: rgba(255,255,255,0.3);" onclick="switchUserRole('admin')">
+                <i class="fa-solid fa-rotate"></i> Refresh Moderation Queue
+              </button>
+            </div>
+          </div>
+
+          <!-- Admin Tabs -->
+          <div class="admin-tabs-nav">
+            <button class="admin-tab-btn active" id="adminTabBtnListings" onclick="switchAdminTab('listings')">
+              <i class="fa-solid fa-clipboard-check"></i> Pending Listings Approval (<span id="adminPendingCountBadge">3</span>)
+            </button>
+            <button class="admin-tab-btn" id="adminTabBtnUsers" onclick="switchAdminTab('users')">
+              <i class="fa-solid fa-users-gear"></i> User Management
+            </button>
+            <button class="admin-tab-btn" id="adminTabBtnExchanges" onclick="switchAdminTab('exchanges')">
+              <i class="fa-solid fa-repeat"></i> Active Exchanges & Donations
+            </button>
+          </div>
+
+          <!-- Tab Content 1: Pending Listings -->
+          <div class="card" id="adminTabContentListings">
+            <div class="card-title mb-3">
+              <i class="fa-solid fa-list-check"></i> Product Listings Requiring Verification
+            </div>
+            <div class="data-table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product Item</th>
+                    <th>Category</th>
+                    <th>Owner / Submitter</th>
+                    <th>Condition</th>
+                    <th>Type</th>
+                    <th>Safety Rating</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminListingsTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: Manage Users -->
+          <div class="card" id="adminTabContentUsers" style="display: none;">
+            <div class="card-title mb-3">
+              <i class="fa-solid fa-user-group"></i> Registered Platform Users
+            </div>
+            <div class="data-table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Eco Tier</th>
+                    <th>Items Donated</th>
+                    <th>Status</th>
+                    <th>Moderate</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab Content 3: Active Exchanges & Transactions -->
+          <div class="card" id="adminTabContentExchanges" style="display: none;">
+            <div class="card-title mb-3">
+              <i class="fa-solid fa-handshake"></i> Monitored Exchanges & Donations
+            </div>
+            <div class="data-table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Transaction ID</th>
+                    <th>Item Involved</th>
+                    <th>Giver / Poster</th>
+                    <th>Requester</th>
+                    <th>Progress</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminExchangesTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- End content-body -->
+    </main>
+  </div><!-- End app-container -->
+
+
+  <!-- ==========================================
+       MODAL 1: REQUEST ITEM POPUP (Section 4 & 9)
+  ========================================== -->
+  <div class="modal-overlay" id="requestItemModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="requestModalTitle">Request Item</div>
+        <button class="modal-close-btn" onclick="closeModal('requestItemModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 16px; margin-bottom: 20px; align-items: center; background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-md);">
+          <img src="" id="requestModalItemImg" style="width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius-sm);" alt="Item">
+          <div>
+            <div style="font-weight: 700; font-size: 1.05rem;" id="requestModalItemName">Product Name</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);" id="requestModalItemLocation">Location</div>
+            <span class="badge badge-donation mt-1" id="requestModalItemType">Free Donation</span>
+          </div>
+        </div>
+
+        <form id="requestItemForm" onsubmit="handleRequestSubmit(event)">
+          <input type="hidden" id="requestModalItemId">
+          
+          <div class="form-group">
+            <label class="form-label" for="requestUserMessage">
+              Message to Donor / Owner <span class="required">*</span>
+            </label>
+            <textarea class="form-textarea" id="requestUserMessage" placeholder="Hello! I would love to reuse this item for my home/studies. When is a good time for pickup?" required></textarea>
+          </div>
+
+          <div class="form-group" id="exchangeOfferField" style="display: none;">
+            <label class="form-label" for="requestExchangeOffer">
+              What item are you proposing to trade in exchange? <span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="requestExchangeOffer" placeholder="e.g. My Sony headphones in good working condition">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="requestUserContact">
+                Your Phone or WhatsApp
+              </label>
+              <input type="text" class="form-input" id="requestUserContact" placeholder="+1 (555) 019-2831" value="+1 (555) 392-8821" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="requestPickupTime">
+                Preferred Pickup Time
+              </label>
+              <select class="form-select" id="requestPickupTime">
+                <option value="Weekend Morning">Weekend Morning (9 AM - 12 PM)</option>
+                <option value="Weekday Evening">Weekday Evening (6 PM - 8 PM)</option>
+                <option value="Flexible">Flexible / Anytime</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="margin: 20px -26px -26px -26px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('requestItemModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-paper-plane"></i> Send Reuse Request
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       MODAL 2: PRODUCT QUICK VIEW POPUP
+  ========================================== -->
+  <div class="modal-overlay" id="productDetailModal">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title">Product Details</div>
+        <button class="modal-close-btn" onclick="closeModal('productDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="width: 100%; height: 260px; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px;">
+          <img src="" id="quickViewImg" style="width: 100%; height: 100%; object-fit: cover;" alt="Item">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+          <span class="badge badge-donation" id="quickViewType">Donation</span>
+          <span class="badge badge-condition-good" id="quickViewCondition">Good Condition</span>
+          <span class="badge badge-status-available" id="quickViewStatus">Available</span>
+        </div>
+
+        <h3 id="quickViewTitle" style="margin-bottom: 8px;">Product Title</h3>
+        
+        <div style="display: flex; align-items: center; gap: 16px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          <span><i class="fa-solid fa-location-dot text-danger"></i> <span id="quickViewLocation">Location</span></span>
+          <span><i class="fa-solid fa-user text-primary"></i> Listed by <span id="quickViewOwner">Owner</span></span>
+          <span><i class="fa-solid fa-weight-hanging text-success"></i> <span id="quickViewWeight">2.5 kg</span></span>
+        </div>
+
+        <p id="quickViewDesc" style="color: var(--text-main); font-size: 0.92rem; line-height: 1.6; margin-bottom: 20px;">
+          Description here.
+        </p>
+
+        <!-- Sustainability statement -->
+        <div style="background: var(--primary-subtle); border-radius: var(--radius-md); padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <i class="fa-solid fa-leaf text-success" style="font-size: 1.4rem;"></i>
+          <div style="font-size: 0.82rem; color: var(--primary-dark);">
+            <strong>Eco Benefit:</strong> Reusing this item prevents manufacturing emissions and keeps approx <span id="quickViewEcoKg">2.5 kg</span> of solid waste out of municipal landfills.
+          </div>
+        </div>
+
+        <div class="modal-footer" style="margin: 20px -26px -26px -26px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('productDetailModal')">Close</button>
+          <button type="button" class="btn btn-primary" id="btnQuickViewRequest" onclick="triggerRequestFromQuickView()">
+            <i class="fa-solid fa-handshake"></i> Request This Item
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       MODAL 3: AUTH (LOGIN & REGISTER) (Section 9)
+  ========================================== -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title" id="authModalTitle">Sign In to REUSE</div>
+        <button class="modal-close-btn" onclick="closeModal('authModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Tab selector -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+          <button class="btn btn-outline btn-sm flex-1 active" id="authTabLogin" onclick="switchAuthTab('login')">Login</button>
+          <button class="btn btn-outline btn-sm flex-1" id="authTabRegister" onclick="switchAuthTab('register')">Create Account</button>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuthSubmit(event)">
+          <div class="form-group" id="authNameGroup" style="display: none;">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="authInputName" placeholder="e.g. David Miller">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" id="authInputEmail" placeholder="yourname@domain.com" required value="sarah.green@example.org">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="authInputPassword" placeholder="••••••••" required value="reuse2026">
+          </div>
+
+          <!-- Quick Demo Switch Roles Button -->
+          <div style="background: var(--bg-subtle); border-radius: var(--radius-md); padding: 10px; margin-bottom: 16px; font-size: 0.8rem;">
+            <strong>Quick Demo Profiles:</strong>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="quickFillAuth('user')">User (Sarah)</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="quickFillAuth('admin')">Admin (Admin Eco)</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" id="btnAuthSubmit">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+
+  <!-- ==========================================
+       JAVASCRIPT LOGIC & STATE ENGINE
+  ========================================== -->
+  <script>
+    /* =========================================================
+       INITIAL SAMPLE DATABASE (Stored & synced with localStorage)
+    ========================================================= */
+    const DEFAULT_PRODUCTS = [
+      {
+        id: "p1",
+        name: "Solid Oak Study & Work Desk",
+        category: "Furniture",
+        condition: "Good",
+        type: "donation",
+        lookingFor: "",
+        weight: 18.0,
+        location: "Green Park Eco Zone",
+        owner: "Sarah Green",
+        ownerId: "u1",
+        description: "Sturdy wooden desk with 2 storage drawers. Slight surface scratch easily covered with a desk pad. Perfect for remote study or work.",
+        image: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-10",
+        requestsCount: 2
+      },
+      {
+        id: "p2",
+        name: "Sony Noise-Cancelling Wireless Headphones",
+        category: "Electronics",
+        condition: "Good",
+        type: "exchange",
+        lookingFor: "Guitar pedals or mechanical keyboard",
+        weight: 0.35,
+        location: "Downtown Eco Hub",
+        owner: "Michael Chang",
+        ownerId: "u2",
+        description: "WH-1000XM3 series in solid black. Clean battery life over 22 hours. Comes with USB-C cable and carrying case.",
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-09",
+        requestsCount: 4
+      },
+      {
+        id: "p3",
+        name: "Vintage Winter Corduroy Overcoat",
+        category: "Clothes",
+        condition: "Good",
+        type: "donation",
+        lookingFor: "",
+        weight: 1.1,
+        location: "Westfield Suburb",
+        owner: "Elena Rostova",
+        ownerId: "u3",
+        description: "Warm olive-green winter coat, unisex medium size. Clean and freshly dry cleaned. Ready for cold months ahead.",
+        image: "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-08",
+        requestsCount: 1
+      },
+      {
+        id: "p4",
+        name: "Complete High School & College Physics Textbooks",
+        category: "Books",
+        condition: "New",
+        type: "donation",
+        lookingFor: "",
+        weight: 2.8,
+        location: "University District",
+        owner: "Sarah Green",
+        ownerId: "u1",
+        description: "Set of 3 Halliday & Resnick fundamentals physics books with solutions guide. Zero markings or torn pages.",
+        image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-07",
+        requestsCount: 3
+      },
+      {
+        id: "p5",
+        name: "Philips Compact Espresso & Coffee Maker",
+        category: "Household",
+        condition: "Good",
+        type: "exchange",
+        lookingFor: "Stainless steel blender or air fryer",
+        weight: 4.2,
+        location: "Southside Gardens",
+        owner: "Marcus Vance",
+        ownerId: "u4",
+        description: "Works beautifully! 15-bar pump espresso maker with milk steam wand. Freshly descaled and cleaned.",
+        image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-06",
+        requestsCount: 5
+      },
+      {
+        id: "p6",
+        name: "LEGO Architecture Studio Set (1,200 pcs)",
+        category: "Toys",
+        condition: "Good",
+        type: "exchange",
+        lookingFor: "Board games (Catan, Ticket to Ride)",
+        weight: 1.9,
+        location: "Highland Heights",
+        owner: "Aria Thorne",
+        ownerId: "u5",
+        description: "Complete set of white and clear architectural bricks with idea guidebook. Great for young designers and hobbyists.",
+        image: "https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-05",
+        requestsCount: 2
+      },
+      {
+        id: "p7",
+        name: "Dell 24-inch UltraSharp IPS Monitor",
+        category: "Electronics",
+        condition: "Good",
+        type: "donation",
+        lookingFor: "",
+        weight: 5.4,
+        location: "Central Tech Quarter",
+        owner: "Sarah Green",
+        ownerId: "u1",
+        description: "1080p full HD with HDMI and DisplayPort inputs. Adjustable height stand. Includes power cord and HDMI cable.",
+        image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-04",
+        requestsCount: 6
+      },
+      {
+        id: "p8",
+        name: "Classical Acoustic Guitar with Padded Bag",
+        category: "Toys",
+        condition: "Used",
+        type: "exchange",
+        lookingFor: "Synthesizer keyboard or audio interface",
+        weight: 3.1,
+        location: "Arts District",
+        owner: "Julian Cruz",
+        ownerId: "u6",
+        description: "Yamaha nylon string classical guitar. Sweet tone and easy on beginner fingers. Has minor scuff on back.",
+        image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-03",
+        requestsCount: 1
+      },
+      {
+        id: "p9",
+        name: "Ergonomic Mesh Swivel Task Chair",
+        category: "Furniture",
+        condition: "Good",
+        type: "donation",
+        lookingFor: "",
+        weight: 12.0,
+        location: "Green Park Eco Zone",
+        owner: "Elena Rostova",
+        ownerId: "u3",
+        description: "Breathable lumbar support, pneumatic gas lift, 360-degree wheels. Ideal for study desk or home office.",
+        image: "https://images.unsplash.com/photo-1580481077195-c22ae249f70d?auto=format&fit=crop&w=600&q=80",
+        status: "Requested",
+        date: "2026-11-02",
+        requestsCount: 3
+      },
+      {
+        id: "p10",
+        name: "Collection of 12 Classic Literature Hardcovers",
+        category: "Books",
+        condition: "New",
+        type: "donation",
+        lookingFor: "",
+        weight: 4.5,
+        location: "East Riverside",
+        owner: "David Miller",
+        ownerId: "u7",
+        description: "Works by Austen, Dickens, Bronte sisters and Orwell. Gold foil spine stamping. Excellent condition.",
+        image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-11-01",
+        requestsCount: 2
+      },
+      {
+        id: "p11",
+        name: "Baby Stroller & Reversible Carriage",
+        category: "Household",
+        condition: "Good",
+        type: "donation",
+        lookingFor: "",
+        weight: 8.5,
+        location: "Maple Valley",
+        owner: "Aria Thorne",
+        ownerId: "u5",
+        description: "Foldable aluminum chassis with 5-point safety harness and sun canopy. Used for 1 year, washed and clean.",
+        image: "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-10-29",
+        requestsCount: 4
+      },
+      {
+        id: "p12",
+        name: "Canon DSLR Camera Body & 18-55mm Kit Lens",
+        category: "Electronics",
+        condition: "Used",
+        type: "exchange",
+        lookingFor: "Apple iPad or graphic tablet",
+        weight: 1.2,
+        location: "Downtown Eco Hub",
+        owner: "Marcus Vance",
+        ownerId: "u4",
+        description: "Rebel T6 with 2 batteries, 32GB SD card and wall charger. Sensor is clean, autofocus works smoothly.",
+        image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
+        status: "Available",
+        date: "2026-10-28",
+        requestsCount: 3
+      }
+    ];
+
+    const DEFAULT_REQUESTS = [
+      {
+        id: "req1",
+        productId: "p9",
+        productName: "Ergonomic Mesh Swivel Task Chair",
+        productImg: "https://images.unsplash.com/photo-1580481077195-c22ae249f70d?auto=format&fit=crop&w=300&q=80",
+        type: "donation",
+        requesterId: "u1",
+        requesterName: "Sarah Green (You)",
+        ownerId: "u3",
+        ownerName: "Elena Rostova",
+        date: "2026-11-11",
+        status: "Pending",
+        message: "Hi Elena! I would love to pick this up this Saturday afternoon if still available. Thank you!"
+      },
+      {
+        id: "req2",
+        productId: "p2",
+        productName: "Sony Noise-Cancelling Wireless Headphones",
+        productImg: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80",
+        type: "exchange",
+        requesterId: "u1",
+        requesterName: "Sarah Green (You)",
+        ownerId: "u2",
+        ownerName: "Michael Chang",
+        date: "2026-11-10",
+        status: "Approved",
+        message: "Proposed exchange: Offering my Keychron mechanical keyboard in exchange for the headphones."
+      },
+      {
+        id: "req3",
+        productId: "p1",
+        productName: "Solid Oak Study & Work Desk",
+        productImg: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&w=300&q=80",
+        type: "donation",
+        requesterId: "u7",
+        requesterName: "David Miller",
+        ownerId: "u1",
+        ownerName: "Sarah Green (You)",
+        date: "2026-11-10",
+        status: "Pending",
+        message: "Hello Sarah! My student son really needs a solid desk. Can I collect it this Friday evening?"
+      },
+      {
+        id: "req4",
+        productId: "p7",
+        productName: "Dell 24-inch UltraSharp IPS Monitor",
+        productImg: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=300&q=80",
+        type: "donation",
+        requesterId: "u4",
+        requesterName: "Marcus Vance",
+        ownerId: "u1",
+        ownerName: "Sarah Green (You)",
+        date: "2026-11-09",
+        status: "Completed",
+        message: "Thank you so much Sarah! Picked up successfully and it works fantastic."
+      }
+    ];
+
+    const DEFAULT_USERS = [
+      { id: "u1", name: "Sarah Green", email: "sarah.green@example.org", role: "user", tier: "Eco Champion", points: 1850, donations: 18, exchanges: 9, status: "Active" },
+      { id: "u2", name: "Michael Chang", email: "m.chang@example.org", role: "user", tier: "Eco Pioneer", points: 1240, donations: 11, exchanges: 6, status: "Active" },
+      { id: "u3", name: "Elena Rostova", email: "elena.r@example.org", role: "user", tier: "Eco Guardian", points: 2190, donations: 24, exchanges: 12, status: "Active" },
+      { id: "u4", name: "Marcus Vance", email: "marcus.v@example.org", role: "user", tier: "Eco Advocate", points: 890, donations: 8, exchanges: 4, status: "Active" },
+      { id: "u5", name: "Aria Thorne", email: "aria.t@example.org", role: "user", tier: "Eco Champion", points: 1640, donations: 15, exchanges: 7, status: "Active" },
+      { id: "u8", name: "Admin Moderator", email: "admin@reuse-ims.org", role: "admin", tier: "System Admin", points: 9999, donations: 42, exchanges: 31, status: "Active" }
+    ];
+
+    const DEFAULT_NOTIFICATIONS = [
+      { id: "n1", title: "Request Approved!", desc: "Michael Chang approved your trade proposal for the Sony Headphones.", time: "15 mins ago", read: false, icon: "fa-solid fa-circle-check text-success" },
+      { id: "n2", title: "New Request on Your Desk", desc: "David Miller requested your Solid Oak Study Desk.", time: "2 hours ago", read: false, icon: "fa-solid fa-handshake text-primary" },
+      { id: "n3", title: "Tier 4 Milestone Reached! 🌱", desc: "Congratulations! You earned 150 eco-points for diverting 18kg of furniture.", time: "Yesterday", read: false, icon: "fa-solid fa-medal text-warning" },
+      { id: "n4", title: "Community Goal Update", desc: "Our neighborhood has diverted 14,820 kg of solid waste this month!", time: "2 days ago", read: true, icon: "fa-solid fa-bullseye text-info" }
+    ];
+
+    const DEFAULT_ACTIVITIES = [
+      { id: "a1", type: "request", title: "New Reuse Request", desc: "David Miller requested Solid Oak Study Desk", time: "2h ago", icon: "fa-solid fa-paper-plane", color: "stat-icon-blue" },
+      { id: "a2", type: "exchange", title: "Trade Approved", desc: "Michael Chang accepted trade for Sony Headphones", time: "5h ago", icon: "fa-solid fa-repeat", color: "stat-icon-purple" },
+      { id: "a3", type: "donation", title: "Item Successfully Reused", desc: "Dell 24\" Monitor handed over to Marcus Vance", time: "1d ago", icon: "fa-solid fa-circle-check", color: "stat-icon-green" },
+      { id: "a4", type: "donation", title: "New Item Donated", desc: "Elena Rostova listed Vintage Corduroy Overcoat", time: "2d ago", icon: "fa-solid fa-heart", color: "stat-icon-emerald" },
+      { id: "a5", type: "request", title: "Request Sent", desc: "You requested Ergonomic Mesh Task Chair", time: "3d ago", icon: "fa-solid fa-handshake-angle", color: "stat-icon-amber" }
+    ];
+
+    /* =========================================================
+       APP STATE ENGINE
+    ========================================================= */
+    let products = [];
+    let requests = [];
+    let users = [];
+    let notifications = [];
+    let activities = [];
+    let currentUser = {
+      id: "u1",
+      name: "Sarah Green",
+      email: "sarah.green@example.org",
+      role: "user",
+      tier: "Eco Champion",
+      points: 1850
+    };
+    let activeCategoryFilter = "all";
+    let pendingImageBase64 = null;
+    let selectedQuickViewItem = null;
+
+    // Chart instances
+    let chartCategory = null;
+    let chartMonthly = null;
+    let chartWaste = null;
+    let chartDonationVsExchange = null;
+    let chartMiniCategory = null;
+
+    /* Initialize Data on Load */
+    function initDatabase() {
+      try {
+        const storedProducts = localStorage.getItem("reuse_products");
+        products = storedProducts ? JSON.parse(storedProducts) : [...DEFAULT_PRODUCTS];
+
+        const storedRequests = localStorage.getItem("reuse_requests");
+        requests = storedRequests ? JSON.parse(storedRequests) : [...DEFAULT_REQUESTS];
+
+        const storedUsers = localStorage.getItem("reuse_users");
+        users = storedUsers ? JSON.parse(storedUsers) : [...DEFAULT_USERS];
+
+        const storedNotifs = localStorage.getItem("reuse_notifications");
+        notifications = storedNotifs ? JSON.parse(storedNotifs) : [...DEFAULT_NOTIFICATIONS];
+
+        const storedActs = localStorage.getItem("reuse_activities");
+        activities = storedActs ? JSON.parse(storedActs) : [...DEFAULT_ACTIVITIES];
+
+        const storedUser = localStorage.getItem("reuse_current_user");
+        if (storedUser) {
+          currentUser = JSON.parse(storedUser);
+        }
+      } catch (e) {
+        console.warn("Storage parse error, resetting state:", e);
+        products = [...DEFAULT_PRODUCTS];
+        requests = [...DEFAULT_REQUESTS];
+        users = [...DEFAULT_USERS];
+        notifications = [...DEFAULT_NOTIFICATIONS];
+        activities = [...DEFAULT_ACTIVITIES];
+      }
+
+      saveAllState();
+      updateHeaderUI();
+      refreshDashboardStats();
+      renderAllViews();
+      initCharts();
+    }
+
+    function saveAllState() {
+      localStorage.setItem("reuse_products", JSON.stringify(products));
+      localStorage.setItem("reuse_requests", JSON.stringify(requests));
+      localStorage.setItem("reuse_users", JSON.stringify(users));
+      localStorage.setItem("reuse_notifications", JSON.stringify(notifications));
+      localStorage.setItem("reuse_activities", JSON.stringify(activities));
+      localStorage.setItem("reuse_current_user", JSON.stringify(currentUser));
+    }
+
+    function resetSampleData() {
+      if (confirm("Reset demo data to initial factory state?")) {
+        localStorage.clear();
+        products = [...DEFAULT_PRODUCTS];
+        requests = [...DEFAULT_REQUESTS];
+        users = [...DEFAULT_USERS];
+        notifications = [...DEFAULT_NOTIFICATIONS];
+        activities = [...DEFAULT_ACTIVITIES];
+        currentUser = {
+          id: "u1",
+          name: "Sarah Green",
+          email: "sarah.green@example.org",
+          role: "user",
+          tier: "Eco Champion",
+          points: 1850
+        };
+        saveAllState();
+        updateHeaderUI();
+        refreshDashboardStats();
+        renderAllViews();
+        initCharts();
+        showToast("Demo data successfully reset!", "info");
+      }
+    }
+
+    /* =========================================================
+       VIEW NAVIGATION ENGINE (Section 2 & 9)
+    ========================================================= */
+    function switchView(viewId) {
+      document.querySelectorAll(".view-section").forEach(sec => sec.classList.remove("active"));
+      const targetView = document.getElementById(viewId);
+      if (targetView) {
+        targetView.classList.add("active");
+      }
+
+      // Update sidebar nav active state
+      document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
+        if (item.getAttribute("data-view") === viewId) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+
+      // Close mobile sidebar if open
+      const sidebar = document.getElementById("appSidebar");
+      if (sidebar.classList.contains("mobile-open")) {
+        sidebar.classList.remove("mobile-open");
+      }
+
+      // Scroll top
+      document.getElementById("contentBody").scrollTop = 0;
+
+      // View specific refresh actions
+      if (viewId === "analyticsView") {
+        setTimeout(initCharts, 50);
+      } else if (viewId === "browseView") {
+        applyFilters();
+      } else if (viewId === "donateView") {
+        renderDonationView();
+      } else if (viewId === "exchangeView") {
+        renderExchangeView();
+      } else if (viewId === "myRequestsView") {
+        renderRequestsTable("sent");
+      } else if (viewId === "myProductsView") {
+        renderMyProductsTable();
+      } else if (viewId === "adminView") {
+        renderAdminTables();
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("appSidebar");
+      if (window.innerWidth <= 900) {
+        sidebar.classList.toggle("mobile-open");
+      } else {
+        sidebar.classList.toggle("collapsed");
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const icon = document.getElementById("themeToggleIcon");
+      if (document.body.classList.contains("dark-mode")) {
+        icon.className = "fa-solid fa-sun";
+      } else {
+        icon.className = "fa-solid fa-moon";
+      }
+      setTimeout(initCharts, 100);
+    }
+
+    /* =========================================================
+       HEADER & USER STATE
+    ========================================================= */
+    function updateHeaderUI() {
+      document.getElementById("headerUserName").textContent = currentUser.name;
+      document.getElementById("headerUserRole").textContent = currentUser.role === "admin" ? "System Admin" : currentUser.tier;
+      document.getElementById("roleSwitchText").textContent = currentUser.role === "admin" ? "Switch to User Mode" : "Switch to Admin Mode";
+
+      // Badge counts
+      const availableCount = products.filter(p => p.status === "Available").length;
+      document.getElementById("sidebarProductCount").textContent = availableCount;
+
+      const pendingCount = requests.filter(r => r.status === "Pending").length;
+      document.getElementById("sidebarPendingCount").textContent = pendingCount;
+
+      const unreadNotifs = notifications.filter(n => !n.read).length;
+      document.getElementById("sidebarNotificationCount").textContent = unreadNotifs;
+      document.getElementById("headerNotificationDot").style.display = unreadNotifs > 0 ? "block" : "none";
+
+      renderHeaderNotifications();
+    }
+
+    function toggleUserDropdown() {
+      const dropdown = document.getElementById("userDropdownMenu");
+      dropdown.classList.toggle("show");
+    }
+
+    function toggleNotificationDropdown() {
+      const dropdown = document.getElementById("notificationDropdownMenu");
+      dropdown.classList.toggle("show");
+    }
+
+    // Close dropdowns when clicking outside
+    window.addEventListener("click", function(e) {
+      if (!e.target.closest(".user-profile-menu")) {
+        document.getElementById("userDropdownMenu").classList.remove("show");
+      }
+      if (!e.target.closest(".header-action-btn") && !e.target.closest("#notificationDropdownMenu")) {
+        document.getElementById("notificationDropdownMenu").classList.remove("show");
+      }
+    });
+
+    function toggleUserRole() {
+      if (currentUser.role === "admin") {
+        currentUser.role = "user";
+        currentUser.name = "Sarah Green";
+        currentUser.tier = "Eco Champion";
+        showToast("Switched to Regular User profile", "info");
+      } else {
+        currentUser.role = "admin";
+        currentUser.name = "Admin Moderator";
+        currentUser.tier = "System Admin";
+        showToast("Switched to Admin / Moderator profile", "info");
+      }
+      saveAllState();
+      updateHeaderUI();
+      renderAllViews();
+    }
+
+    /* =========================================================
+       SECTION 3: STATS & DASHBOARD RECENT ACTIVITIES
+    ========================================================= */
+    function refreshDashboardStats() {
+      const available = products.filter(p => p.status === "Available").length;
+      const reused = 856 + products.filter(p => p.status === "Reused").length;
+      const donations = products.filter(p => p.type === "donation").length + 510;
+      const pending = requests.filter(r => r.status === "Pending").length;
+      const totalUsers = users.length + 1274;
+
+      document.getElementById("statProductsAvailable").textContent = available;
+      document.getElementById("statProductsReused").textContent = reused;
+      document.getElementById("statTotalDonations").textContent = donations;
+      document.getElementById("statPendingRequests").textContent = pending;
+      document.getElementById("statRegisteredUsers").textContent = totalUsers.toLocaleString();
+
+      // Cumulative weight diverted
+      let totalKg = 14820;
+      products.forEach(p => {
+        if (p.weight) totalKg += p.weight;
+      });
+      const formattedKg = Math.round(totalKg).toLocaleString() + " kg";
+      document.getElementById("statWasteDiverted").textContent = formattedKg;
+      document.getElementById("headerLiveTicker").textContent = `🌱 ${formattedKg} Diverted`;
+
+      renderRecentActivities();
+      renderDashboardRecentProducts();
+    }
+
+    function renderRecentActivities(filter = "all") {
+      const container = document.getElementById("recentActivitiesList");
+      container.innerHTML = "";
+
+      const filtered = filter === "all" ? activities : activities.filter(a => a.type === filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No activities found for this filter.</div>`;
+        return;
+      }
+
+      filtered.slice(0, 6).forEach(act => {
+        const item = document.createElement("div");
+        item.className = "activity-item";
+        item.innerHTML = `
+          <div class="activity-icon-bubble ${act.color || 'stat-icon-green'}">
+            <i class="${act.icon || 'fa-solid fa-leaf'}"></i>
+          </div>
+          <div class="activity-content">
+            <div class="activity-title">${act.title}</div>
+            <div class="activity-desc">${act.desc}</div>
+          </div>
+          <div class="activity-time">${act.time}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function filterActivityLog(type, btnEl) {
+      document.querySelectorAll(".card-header-flex .btn-outline").forEach(b => b.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+      renderRecentActivities(type);
+    }
+
+    function renderDashboardRecentProducts() {
+      const grid = document.getElementById("dashboardRecentProductsGrid");
+      grid.innerHTML = "";
+      const recent = products.slice(0, 4);
+
+      recent.forEach(prod => {
+        grid.appendChild(createProductCard(prod));
+      });
+    }
+
+    /* =========================================================
+       SECTION 4: PRODUCT CARD CREATION & BROWSE
+    ========================================================= */
+    function createProductCard(prod) {
+      const card = document.createElement("div");
+      card.className = "product-card";
+
+      const typeBadge = prod.type === "donation" 
+        ? `<span class="badge badge-donation"><i class="fa-solid fa-heart"></i> Free Donation</span>`
+        : `<span class="badge badge-exchange"><i class="fa-solid fa-repeat"></i> Exchange</span>`;
+
+      const conditionClass = prod.condition === "New" ? "badge-condition-new" : (prod.condition === "Good" ? "badge-condition-good" : "badge-condition-used");
+      const conditionBadge = `<span class="badge ${conditionClass}">${prod.condition}</span>`;
+
+      const statusBadge = prod.status === "Available"
+        ? `<span class="badge badge-status-available">Available</span>`
+        : (prod.status === "Requested" ? `<span class="badge badge-status-requested">Requested</span>` : `<span class="badge badge-status-reused">Reused</span>`);
+
+      card.innerHTML = `
+        <div class="product-img-wrap" onclick="openProductQuickView('${prod.id}')" style="cursor: pointer;">
+          <img src="${prod.image}" alt="${prod.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'">
+          <div class="product-badges-top">
+            ${typeBadge}
+            ${statusBadge}
+          </div>
+        </div>
+        <div class="product-body">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="product-cat-tag">${prod.category}</span>
+            ${conditionBadge}
+          </div>
+          <div class="product-title" title="${prod.name}">${prod.name}</div>
+          <div class="product-desc">${prod.description}</div>
+          <div class="product-meta-row">
+            <span class="product-location"><i class="fa-solid fa-location-dot"></i> ${prod.location}</span>
+            <span><i class="fa-regular fa-clock"></i> ${prod.date || 'Recent'}</span>
+          </div>
+        </div>
+        <div class="product-footer-actions">
+          <button class="btn btn-outline btn-sm" onclick="openProductQuickView('${prod.id}')">
+            <i class="fa-regular fa-eye"></i> Details
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openRequestModal('${prod.id}')" ${prod.status !== 'Available' ? 'disabled style="opacity:0.6;"' : ''}>
+            <i class="fa-solid fa-handshake"></i> ${prod.type === 'exchange' ? 'Propose Trade' : 'Request Item'}
+          </button>
+        </div>
+      `;
+      return card;
+    }
+
+    function applyFilters() {
+      const query = (document.getElementById("browseSearchInput")?.value || "").toLowerCase().trim();
+      const condition = document.getElementById("filterCondition")?.value || "all";
+      const type = document.getElementById("filterType")?.value || "all";
+      const availability = document.getElementById("filterAvailability")?.value || "Available";
+      const sort = document.getElementById("filterSort")?.value || "newest";
+
+      let filtered = products.filter(p => {
+        // Query search
+        const matchesQuery = !query || 
+          p.name.toLowerCase().includes(query) || 
+          p.description.toLowerCase().includes(query) || 
+          p.location.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query);
+
+        // Category
+        const matchesCat = activeCategoryFilter === "all" || p.category === activeCategoryFilter;
+
+        // Condition
+        const matchesCondition = condition === "all" || p.condition === condition;
+
+        // Type
+        const matchesType = type === "all" || p.type === type;
+
+        // Availability
+        const matchesAvail = availability === "all" || p.status === availability;
+
+        return matchesQuery && matchesCat && matchesCondition && matchesType && matchesAvail;
+      });
+
+      // Sorting
+      if (sort === "popular") {
+        filtered.sort((a, b) => (b.requestsCount || 0) - (a.requestsCount || 0));
+      } else if (sort === "weight") {
+        filtered.sort((a, b) => (b.weight || 0) - (a.weight || 0));
+      } else {
+        // Newest first
+        filtered.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      }
+
+      const grid = document.getElementById("mainProductsGrid");
+      grid.innerHTML = "";
+      document.getElementById("browseResultsCount").textContent = `Showing ${filtered.length} products`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 60px 20px; text-align: center;">
+            <i class="fa-solid fa-box-open" style="font-size: 3rem; color: var(--text-light); margin-bottom: 14px;"></i>
+            <h3>No products found</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Try broadening your search keywords or resetting filters.</p>
+            <button class="btn btn-outline-primary btn-sm mt-3" onclick="resetFilters()">Reset All Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(prod => grid.appendChild(createProductCard(prod)));
+    }
+
+    function selectCategoryFilter(category, el) {
+      activeCategoryFilter = category;
+      document.querySelectorAll("#categoryPillsContainer .category-pill").forEach(pill => pill.classList.remove("active"));
+      if (el) el.classList.add("active");
+      applyFilters();
+    }
+
+    function resetFilters() {
+      if (document.getElementById("browseSearchInput")) document.getElementById("browseSearchInput").value = "";
+      if (document.getElementById("filterCondition")) document.getElementById("filterCondition").value = "all";
+      if (document.getElementById("filterType")) document.getElementById("filterType").value = "all";
+      if (document.getElementById("filterAvailability")) document.getElementById("filterAvailability").value = "Available";
+      if (document.getElementById("filterSort")) document.getElementById("filterSort").value = "newest";
+
+      selectCategoryFilter("all", document.querySelector("#categoryPillsContainer .category-pill"));
+    }
+
+    function handleGlobalSearch(e) {
+      const q = e.target.value.trim();
+      if (e.key === "Enter" && q) {
+        switchView("browseView");
+        document.getElementById("browseSearchInput").value = q;
+        applyFilters();
+      }
+    }
+
+    /* =========================================================
+       SECTION 5: ADD NEW PRODUCT FORM & IMAGE UPLOAD
+    ========================================================= */
+    function setListingTypeRadio(type) {
+      document.getElementById("radioTypeDonation").classList.toggle("active", type === "donation");
+      document.getElementById("radioTypeExchange").classList.toggle("active", type === "exchange");
+      document.querySelector(`input[name="listingType"][value="${type}"]`).checked = true;
+
+      const exchangeField = document.getElementById("exchangeDetailsGroup");
+      if (type === "exchange") {
+        exchangeField.style.display = "block";
+      } else {
+        exchangeField.style.display = "none";
+      }
+    }
+
+    function handleImageFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        pendingImageBase64 = evt.target.result;
+        showImagePreview(pendingImageBase64);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showImagePreview(url) {
+      document.getElementById("imagePreviewImg").src = url;
+      document.getElementById("imagePreviewBox").style.display = "block";
+      document.getElementById("imageDropzone").style.display = "none";
+    }
+
+    function removeImagePreview(e) {
+      if (e) e.stopPropagation();
+      pendingImageBase64 = null;
+      document.getElementById("productImageFileInput").value = "";
+      document.getElementById("imagePreviewBox").style.display = "none";
+      document.getElementById("imageDropzone").style.display = "block";
+    }
+
+    function setPresetImage(url, tag) {
+      pendingImageBase64 = url;
+      showImagePreview(url);
+      showToast(`Selected preset ${tag} photo`, "info");
+    }
+
+    function handleProductSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById("formProdName").value.trim();
+      const category = document.getElementById("formProdCategory").value;
+      const type = document.querySelector('input[name="listingType"]:checked').value;
+      const condition = document.getElementById("formProdCondition").value;
+      const lookingFor = document.getElementById("formExchangeLookingFor").value.trim();
+      const location = document.getElementById("formProdLocation").value.trim();
+      const weight = parseFloat(document.getElementById("formProdWeight").value) || 2.0;
+      const desc = document.getElementById("formProdDesc").value.trim();
+
+      const image = pendingImageBase64 || "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80";
+
+      const newProduct = {
+        id: "p" + Date.now(),
+        name: name,
+        category: category,
+        condition: condition,
+        type: type,
+        lookingFor: lookingFor,
+        weight: weight,
+        location: location,
+        owner: currentUser.name,
+        ownerId: currentUser.id,
+        description: desc,
+        image: image,
+        status: "Available",
+        date: new Date().toISOString().split("T")[0],
+        requestsCount: 0
+      };
+
+      // Add to front of products list
+      products.unshift(newProduct);
+
+      // Add activity
+      activities.unshift({
+        id: "a" + Date.now(),
+        type: type,
+        title: `New ${type === 'donation' ? 'Donation' : 'Exchange'} Listed`,
+        desc: `${currentUser.name} listed "${name}" in ${category}`,
+        time: "Just now",
+        icon: type === 'donation' ? "fa-solid fa-gift" : "fa-solid fa-repeat",
+        color: type === 'donation' ? "stat-icon-green" : "stat-icon-purple"
+      });
+
+      // Award Eco Points
+      currentUser.points = (currentUser.points || 0) + 100;
+      if (type === "donation") currentUser.donations = (currentUser.donations || 0) + 1;
+      else currentUser.exchanges = (currentUser.exchanges || 0) + 1;
+
+      notifications.unshift({
+        id: "n" + Date.now(),
+        title: "Product Published!",
+        desc: `"${name}" is now live and visible to community members. +100 Eco Points awarded!`,
+        time: "Just now",
+        read: false,
+        icon: "fa-solid fa-circle-check text-success"
+      });
+
+      saveAllState();
+      refreshDashboardStats();
+      updateHeaderUI();
+
+      // Confetti celebration
+      if (typeof confetti === "function") {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      showToast(`Success! "${name}" has been published.`, "success");
+
+      // Reset Form
+      document.getElementById("addProductForm").reset();
+      removeImagePreview();
+      setListingTypeRadio("donation");
+
+      // Switch to browse view to see newly published item
+      setTimeout(() => switchView("browseView"), 700);
+    }
+
+    /* =========================================================
+       SECTION 4 & 5: DEDICATED DONATION & EXCHANGE VIEWS
+    ========================================================= */
+    function renderDonationView() {
+      const grid = document.getElementById("donationProductsGrid");
+      grid.innerHTML = "";
+      const donations = products.filter(p => p.type === "donation");
+
+      document.getElementById("donateStatsAvailable").textContent = donations.filter(p => p.status === "Available").length;
+
+      donations.forEach(prod => grid.appendChild(createProductCard(prod)));
+    }
+
+    function renderExchangeView() {
+      const grid = document.getElementById("exchangeProductsGrid");
+      grid.innerHTML = "";
+      const exchanges = products.filter(p => p.type === "exchange");
+
+      exchanges.forEach(prod => grid.appendChild(createProductCard(prod)));
+    }
+
+    function setQuickDonationMode() {
+      switchView("addProductView");
+      setListingTypeRadio("donation");
+    }
+
+    function setQuickExchangeMode() {
+      switchView("addProductView");
+      setListingTypeRadio("exchange");
+    }
+
+    /* =========================================================
+       MODALS: REQUEST ITEM & QUICK VIEW
+    ========================================================= */
+    function openRequestModal(prodId) {
+      const prod = products.find(p => p.id === prodId);
+      if (!prod) return;
+
+      document.getElementById("requestModalItemId").value = prod.id;
+      document.getElementById("requestModalTitle").textContent = prod.type === "exchange" ? "Propose Barter Exchange" : "Request Donation Item";
+      document.getElementById("requestModalItemName").textContent = prod.name;
+      document.getElementById("requestModalItemLocation").textContent = `📍 ${prod.location} • Offered by ${prod.owner}`;
+      document.getElementById("requestModalItemImg").src = prod.image;
+
+      const typeBadge = document.getElementById("requestModalItemType");
+      if (prod.type === "exchange") {
+        typeBadge.className = "badge badge-exchange";
+        typeBadge.textContent = "Barter Exchange";
+        document.getElementById("exchangeOfferField").style.display = "block";
+      } else {
+        typeBadge.className = "badge badge-donation";
+        typeBadge.textContent = "Free Community Donation";
+        document.getElementById("exchangeOfferField").style.display = "none";
+      }
+
+      openModal("requestItemModal");
+    }
+
+    function handleRequestSubmit(e) {
+      e.preventDefault();
+      const prodId = document.getElementById("requestModalItemId").value;
+      const message = document.getElementById("requestUserMessage").value.trim();
+      const offer = document.getElementById("requestExchangeOffer")?.value.trim() || "";
+      const contact = document.getElementById("requestUserContact").value.trim();
+
+      const prod = products.find(p => p.id === prodId);
+      if (!prod) return;
+
+      // Create new request
+      const newReq = {
+        id: "req" + Date.now(),
+        productId: prod.id,
+        productName: prod.name,
+        productImg: prod.image,
+        type: prod.type,
+        requesterId: currentUser.id,
+        requesterName: `${currentUser.name} (You)`,
+        ownerId: prod.ownerId || "u_owner",
+        ownerName: prod.owner,
+        date: new Date().toISOString().split("T")[0],
+        status: "Pending",
+        message: message + (offer ? ` | Trade Offer: ${offer}` : "") + ` | Contact: ${contact}`
+      };
+
+      requests.unshift(newReq);
+      prod.requestsCount = (prod.requestsCount || 0) + 1;
+      prod.status = "Requested"; // Update availability status
+
+      activities.unshift({
+        id: "a" + Date.now(),
+        type: "request",
+        title: "Reuse Request Submitted",
+        desc: `You requested "${prod.name}" from ${prod.owner}`,
+        time: "Just now",
+        icon: "fa-solid fa-paper-plane",
+        color: "stat-icon-amber"
+      });
+
+      notifications.unshift({
+        id: "n" + Date.now(),
+        title: "Request Sent!",
+        desc: `Your reuse request for "${prod.name}" was delivered to ${prod.owner}.`,
+        time: "Just now",
+        read: false,
+        icon: "fa-solid fa-paper-plane text-primary"
+      });
+
+      saveAllState();
+      refreshDashboardStats();
+      updateHeaderUI();
+      closeModal("requestItemModal");
+
+      showToast(`Request sent successfully to ${prod.owner}!`, "success");
+      switchView("myRequestsView");
+    }
+
+    function openProductQuickView(prodId) {
+      const prod = products.find(p => p.id === prodId);
+      if (!prod) return;
+      selectedQuickViewItem = prod;
+
+      document.getElementById("quickViewImg").src = prod.image;
+      document.getElementById("quickViewTitle").textContent = prod.name;
+      document.getElementById("quickViewLocation").textContent = prod.location;
+      document.getElementById("quickViewOwner").textContent = prod.owner;
+      document.getElementById("quickViewWeight").textContent = (prod.weight || 2.5) + " kg";
+      document.getElementById("quickViewDesc").textContent = prod.description;
+      document.getElementById("quickViewEcoKg").textContent = (prod.weight || 2.5) + " kg";
+
+      const typeBadge = document.getElementById("quickViewType");
+      typeBadge.textContent = prod.type === "donation" ? "Free Donation" : "Barter Exchange";
+      typeBadge.className = prod.type === "donation" ? "badge badge-donation" : "badge badge-exchange";
+
+      document.getElementById("quickViewCondition").textContent = prod.condition + " Condition";
+      document.getElementById("quickViewStatus").textContent = prod.status;
+
+      const reqBtn = document.getElementById("btnQuickViewRequest");
+      if (prod.status !== "Available") {
+        reqBtn.disabled = true;
+        reqBtn.textContent = "Currently " + prod.status;
+      } else {
+        reqBtn.disabled = false;
+        reqBtn.innerHTML = `<i class="fa-solid fa-handshake"></i> ${prod.type === 'exchange' ? 'Propose Trade' : 'Request Item'}`;
+      }
+
+      openModal("productDetailModal");
+    }
+
+    function triggerRequestFromQuickView() {
+      if (!selectedQuickViewItem) return;
+      closeModal("productDetailModal");
+      openRequestModal(selectedQuickViewItem.id);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add("show");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("show");
+    }
+
+    /* =========================================================
+       SECTION 9: MY REQUESTS & ACTIONS
+    ========================================================= */
+    let currentRequestTab = "sent";
+
+    function switchRequestTab(tab) {
+      currentRequestTab = tab;
+      document.getElementById("btnTabSentRequests").classList.toggle("active", tab === "sent");
+      document.getElementById("btnTabSentRequests").classList.toggle("btn-primary", tab === "sent");
+      document.getElementById("btnTabSentRequests").classList.toggle("btn-outline", tab !== "sent");
+
+      document.getElementById("btnTabReceivedRequests").classList.toggle("active", tab === "received");
+      document.getElementById("btnTabReceivedRequests").classList.toggle("btn-primary", tab === "received");
+      document.getElementById("btnTabReceivedRequests").classList.toggle("btn-outline", tab !== "received");
+
+      renderRequestsTable(tab);
+    }
+
+    function renderRequestsTable(tab = "sent") {
+      const tbody = document.getElementById("requestsTableBody");
+      tbody.innerHTML = "";
+
+      const sent = requests.filter(r => r.requesterId === currentUser.id);
+      const received = requests.filter(r => r.ownerId === currentUser.id);
+
+      document.getElementById("countSentRequests").textContent = sent.length;
+      document.getElementById("countReceivedRequests").textContent = received.length;
+
+      const activeList = tab === "sent" ? sent : received;
+
+      if (activeList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">No ${tab} requests found.</td></tr>`;
+        return;
+      }
+
+      activeList.forEach(req => {
+        const tr = document.createElement("tr");
+
+        const statusClass = req.status === "Approved" ? "badge-donation" : (req.status === "Pending" ? "badge-condition-used" : "badge-status-reused");
+        const statusBadge = `<span class="badge ${statusClass}">${req.status}</span>`;
+        const typeBadge = req.type === "donation" ? `<span class="badge badge-donation">Donation</span>` : `<span class="badge badge-exchange">Exchange</span>`;
+
+        let actionButtons = "";
+        if (tab === "sent") {
+          if (req.status === "Pending") {
+            actionButtons = `<button class="btn btn-outline btn-sm text-danger" onclick="cancelRequest('${req.id}')"><i class="fa-solid fa-xmark"></i> Cancel</button>`;
+          } else if (req.status === "Approved") {
+            actionButtons = `<button class="btn btn-primary btn-sm" onclick="markRequestCompleted('${req.id}')"><i class="fa-solid fa-circle-check"></i> Mark Received</button>`;
+          } else {
+            actionButtons = `<span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-check"></i> Completed</span>`;
+          }
+        } else {
+          // Received
+          if (req.status === "Pending") {
+            actionButtons = `
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-primary btn-sm" onclick="approveRequest('${req.id}')"><i class="fa-solid fa-check"></i> Accept</button>
+                <button class="btn btn-outline btn-sm text-danger" onclick="declineRequest('${req.id}')">Decline</button>
+              </div>
+            `;
+          } else if (req.status === "Approved") {
+            actionButtons = `<button class="btn btn-primary btn-sm" onclick="markRequestCompleted('${req.id}')"><i class="fa-solid fa-handshake"></i> Hand Over</button>`;
+          } else {
+            actionButtons = `<span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-check"></i> Reused & Handed Over</span>`;
+          }
+        }
+
+        tr.innerHTML = `
+          <td>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img src="${req.productImg}" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-sm);" alt="item">
+              <div>
+                <strong style="font-size: 0.9rem;">${req.productName}</strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">${req.message}</div>
+              </div>
+            </div>
+          </td>
+          <td>${typeBadge}</td>
+          <td>${tab === "sent" ? req.ownerName : req.requesterName}</td>
+          <td>${req.date}</td>
+          <td>${statusBadge}</td>
+          <td>${actionButtons}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function approveRequest(reqId) {
+      const req = requests.find(r => r.id === reqId);
+      if (req) {
+        req.status = "Approved";
+        showToast("Request approved! Contact details shared with requester.", "success");
+        saveAllState();
+        renderRequestsTable("received");
+        updateHeaderUI();
+      }
+    }
+
+    function declineRequest(reqId) {
+      const req = requests.find(r => r.id === reqId);
+      if (req) {
+        req.status = "Declined";
+        showToast("Request declined.", "info");
+        saveAllState();
+        renderRequestsTable("received");
+        updateHeaderUI();
+      }
+    }
+
+    function cancelRequest(reqId) {
+      requests = requests.filter(r => r.id !== reqId);
+      showToast("Request cancelled.", "info");
+      saveAllState();
+      renderRequestsTable("sent");
+      updateHeaderUI();
+      refreshDashboardStats();
+    }
+
+    function markRequestCompleted(reqId) {
+      const req = requests.find(r => r.id === reqId);
+      if (req) {
+        req.status = "Completed";
+        const prod = products.find(p => p.id === req.productId);
+        if (prod) prod.status = "Reused";
+
+        // Confetti!
+        if (typeof confetti === "function") {
+          confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+        }
+
+        showToast("Hooray! Item officially reused and saved from landfill!", "success");
+        saveAllState();
+        renderRequestsTable(currentRequestTab);
+        refreshDashboardStats();
+        updateHeaderUI();
+      }
+    }
+
+    /* =========================================================
+       MY PRODUCTS TABLE
+    ========================================================= */
+    function renderMyProductsTable() {
+      const tbody = document.getElementById("myProductsTableBody");
+      tbody.innerHTML = "";
+
+      const myItems = products.filter(p => p.ownerId === currentUser.id);
+
+      if (myItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">You have not listed any items yet.</td></tr>`;
+        return;
+      }
+
+      myItems.forEach(prod => {
+        const tr = document.createElement("tr");
+
+        const statusBadge = prod.status === "Available"
+          ? `<span class="badge badge-status-available">Available</span>`
+          : (prod.status === "Requested" ? `<span class="badge badge-status-requested">Requested</span>` : `<span class="badge badge-status-reused">Reused</span>`);
+
+        const typeBadge = prod.type === "donation" ? `<span class="badge badge-donation">Donation</span>` : `<span class="badge badge-exchange">Exchange</span>`;
+
+        tr.innerHTML = `
+          <td>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img src="${prod.image}" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-sm);" alt="item">
+              <strong style="font-size: 0.9rem;">${prod.name}</strong>
+            </div>
+          </td>
+          <td>${prod.category}</td>
+          <td>${prod.condition}</td>
+          <td>${typeBadge}</td>
+          <td>${prod.location}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              ${prod.status !== 'Reused' ? `<button class="btn btn-outline-primary btn-sm" onclick="markProductReused('${prod.id}')" title="Mark as Reused"><i class="fa-solid fa-check"></i> Reused</button>` : ''}
+              <button class="btn btn-outline btn-sm text-danger" onclick="deleteProduct('${prod.id}')" title="Delete Listing"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function markProductReused(prodId) {
+      const prod = products.find(p => p.id === prodId);
+      if (prod) {
+        prod.status = "Reused";
+        showToast(`"${prod.name}" marked as successfully reused!`, "success");
+        saveAllState();
+        renderMyProductsTable();
+        refreshDashboardStats();
+      }
+    }
+
+    function deleteProduct(prodId) {
+      if (confirm("Are you sure you want to delete this listing?")) {
+        products = products.filter(p => p.id !== prodId);
+        showToast("Product listing removed.", "info");
+        saveAllState();
+        renderMyProductsTable();
+        refreshDashboardStats();
+        updateHeaderUI();
+      }
+    }
+
+    /* =========================================================
+       SECTION 8: ADMIN DASHBOARD (MODERATION & USERS)
+    ========================================================= */
+    function switchAdminTab(tab) {
+      document.querySelectorAll(".admin-tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.getElementById("adminTabContentListings").style.display = "none";
+      document.getElementById("adminTabContentUsers").style.display = "none";
+      document.getElementById("adminTabContentExchanges").style.display = "none";
+
+      if (tab === "listings") {
+        document.getElementById("adminTabBtnListings").classList.add("active");
+        document.getElementById("adminTabContentListings").style.display = "block";
+      } else if (tab === "users") {
+        document.getElementById("adminTabBtnUsers").classList.add("active");
+        document.getElementById("adminTabContentUsers").style.display = "block";
+      } else if (tab === "exchanges") {
+        document.getElementById("adminTabBtnExchanges").classList.add("active");
+        document.getElementById("adminTabContentExchanges").style.display = "block";
+      }
+    }
+
+    function renderAdminTables() {
+      // 1. Pending Listings
+      const pendingGrid = document.getElementById("adminListingsTableBody");
+      pendingGrid.innerHTML = "";
+
+      const sampleListings = products.slice(0, 4);
+      document.getElementById("adminPendingCountBadge").textContent = sampleListings.length;
+
+      sampleListings.forEach(prod => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="${prod.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
+              <div>
+                <strong>${prod.name}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${prod.location}</div>
+              </div>
+            </div>
+          </td>
+          <td>${prod.category}</td>
+          <td>${prod.owner}</td>
+          <td>${prod.condition}</td>
+          <td><span class="badge ${prod.type === 'donation' ? 'badge-donation' : 'badge-exchange'}">${prod.type}</span></td>
+          <td><span class="badge badge-donation"><i class="fa-solid fa-shield"></i> Safe (99%)</span></td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-primary btn-sm" onclick="adminApproveItem('${prod.id}')"><i class="fa-solid fa-check"></i> Approve</button>
+              <button class="btn btn-outline btn-sm text-danger" onclick="adminRejectItem('${prod.id}')"><i class="fa-solid fa-ban"></i> Reject</button>
+            </div>
+          </td>
+        `;
+        pendingGrid.appendChild(tr);
+      });
+
+      // 2. Users Table
+      const usersGrid = document.getElementById("adminUsersTableBody");
+      usersGrid.innerHTML = "";
+
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div class="user-table-cell">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" class="user-table-avatar">
+              <div>
+                <strong>${u.name}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge ${u.role === 'admin' ? 'badge-exchange' : 'badge-donation'}">${u.role}</span></td>
+          <td>${u.tier} (${u.points} pts)</td>
+          <td>${u.donations} items</td>
+          <td><span class="badge badge-status-available">${u.status}</span></td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="adminToggleUserStatus('${u.id}')">
+              ${u.status === 'Active' ? 'Suspend' : 'Activate'}
+            </button>
+          </td>
+        `;
+        usersGrid.appendChild(tr);
+      });
+
+      // 3. Exchanges table
+      const exchangesGrid = document.getElementById("adminExchangesTableBody");
+      exchangesGrid.innerHTML = "";
+
+      requests.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><code>#${r.id}</code></td>
+          <td><strong>${r.productName}</strong></td>
+          <td>${r.ownerName}</td>
+          <td>${r.requesterName}</td>
+          <td><span class="badge ${r.status === 'Completed' ? 'badge-donation' : 'badge-status-requested'}">${r.status}</span></td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="showToast('Transaction audit log viewed', 'info')">Audit Log</button>
+          </td>
+        `;
+        exchangesGrid.appendChild(tr);
+      });
+    }
+
+    function adminApproveItem(id) {
+      showToast(`Item #${id} approved and published to verified listings!`, "success");
+    }
+
+    function adminRejectItem(id) {
+      if (confirm("Reject and remove listing for community safety?")) {
+        products = products.filter(p => p.id !== id);
+        saveAllState();
+        renderAdminTables();
+        refreshDashboardStats();
+        showToast(`Item #${id} rejected and removed.`, "info");
+      }
+    }
+
+    function adminToggleUserStatus(uid) {
+      const user = users.find(u => u.id === uid);
+      if (user) {
+        user.status = user.status === "Active" ? "Suspended" : "Active";
+        showToast(`User ${user.name} status updated to ${user.status}`, "info");
+        saveAllState();
+        renderAdminTables();
+      }
+    }
+
+    /* =========================================================
+       SECTION 6: CHART.JS ANALYTICS ENGINE
+    ========================================================= */
+    function initCharts() {
+      // 1. Products Reused by Category (Donut Chart)
+      const catCtx = document.getElementById("categoryChart")?.getContext("2d");
+      if (catCtx) {
+        if (chartCategory) chartCategory.destroy();
+        chartCategory = new Chart(catCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Books & Study", "Clothes & Fashion", "Electronics", "Furniture", "Household", "Toys & Sports"],
+            datasets: [{
+              data: [412, 310, 264, 198, 145, 92],
+              backgroundColor: ["#16a34a", "#10b981", "#0284c7", "#f59e0b", "#8b5cf6", "#ec4899"],
+              borderWidth: 2,
+              borderColor: document.body.classList.contains("dark-mode") ? "#15242c" : "#ffffff"
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: "right" }
+            }
+          }
+        });
+      }
+
+      // Mini chart on dashboard overview
+      const miniCtx = document.getElementById("miniCategoryChart")?.getContext("2d");
+      if (miniCtx) {
+        if (chartMiniCategory) chartMiniCategory.destroy();
+        chartMiniCategory = new Chart(miniCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Books", "Clothes", "Tech", "Furniture", "Other"],
+            datasets: [{
+              data: [412, 310, 264, 198, 237],
+              backgroundColor: ["#16a34a", "#10b981", "#0284c7", "#f59e0b", "#8b5cf6"],
+              borderWidth: 2,
+              borderColor: document.body.classList.contains("dark-mode") ? "#15242c" : "#ffffff"
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      // 2. Monthly Donations & Exchanges Trend (Line Chart)
+      const monthlyCtx = document.getElementById("monthlyDonationsChart")?.getContext("2d");
+      if (monthlyCtx) {
+        if (chartMonthly) chartMonthly.destroy();
+        chartMonthly = new Chart(monthlyCtx, {
+          type: "line",
+          data: {
+            labels: ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov (Est)"],
+            datasets: [
+              {
+                label: "Donations Completed",
+                data: [48, 62, 85, 110, 142, 175],
+                borderColor: "#16a34a",
+                backgroundColor: "rgba(22, 163, 74, 0.12)",
+                fill: true,
+                tension: 0.35
+              },
+              {
+                label: "Barter Exchanges",
+                data: [22, 35, 49, 68, 92, 118],
+                borderColor: "#0284c7",
+                backgroundColor: "rgba(2, 132, 199, 0.1)",
+                fill: true,
+                tension: 0.35
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // 3. Total Waste Reduced (kg) Bar Chart
+      const wasteCtx = document.getElementById("wasteReducedChart")?.getContext("2d");
+      if (wasteCtx) {
+        if (chartWaste) chartWaste.destroy();
+        chartWaste = new Chart(wasteCtx, {
+          type: "bar",
+          data: {
+            labels: ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov"],
+            datasets: [{
+              label: "Kilograms Diverted",
+              data: [1240, 1850, 2410, 3180, 4290, 5600],
+              backgroundColor: "#10b981",
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // 4. Donation vs Exchange Split (Doughnut / Half gauge)
+      const splitCtx = document.getElementById("donationVsExchangeChart")?.getContext("2d");
+      if (splitCtx) {
+        if (chartDonationVsExchange) chartDonationVsExchange.destroy();
+        chartDonationVsExchange = new Chart(splitCtx, {
+          type: "pie",
+          data: {
+            labels: ["Free Community Donations (62%)", "Circular Exchanges (38%)"],
+            datasets: [{
+              data: [62, 38],
+              backgroundColor: ["#16a34a", "#0284c7"],
+              borderWidth: 2,
+              borderColor: document.body.classList.contains("dark-mode") ? "#15242c" : "#ffffff"
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "bottom" } }
+          }
+        });
+      }
+    }
+
+    function exportAnalyticsCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,Category,ItemsReused,AvgWeightKg,WasteDivertedKg,CO2SavedKg\n";
+      csvContent += "Electronics,264,3.4,897.6,8420\n";
+      csvContent += "Furniture,198,24.5,4851.0,6110\n";
+      csvContent += "Clothes,310,1.2,372.0,4650\n";
+      csvContent += "Books,412,0.8,329.6,1240\n";
+      csvContent += "Household,145,5.2,754.0,2100\n";
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "reuse_sustainability_report_2026.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast("Sustainability CSV report downloaded!", "success");
+    }
+
+    /* =========================================================
+       SECTION 8 & 9: NOTIFICATIONS & PROFILE UPDATES
+    ========================================================= */
+    function renderHeaderNotifications() {
+      const container = document.getElementById("headerNotificationList");
+      const fullContainer = document.getElementById("fullNotificationsList");
+
+      container.innerHTML = "";
+      if (fullContainer) fullContainer.innerHTML = "";
+
+      notifications.forEach(n => {
+        // Dropdown item
+        const item = document.createElement("div");
+        item.style.padding = "10px 14px";
+        item.style.borderBottom = "1px solid var(--border-color)";
+        item.style.display = "flex";
+        item.style.gap = "10px";
+        item.style.alignItems = "flex-start";
+        item.style.backgroundColor = n.read ? "transparent" : "var(--bg-subtle)";
+        item.innerHTML = `
+          <i class="${n.icon}" style="margin-top: 3px; font-size: 1rem;"></i>
+          <div style="flex: 1;">
+            <div style="font-size: 0.84rem; font-weight: 700;">${n.title}</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">${n.desc}</div>
+            <div style="font-size: 0.7rem; color: var(--text-light); margin-top: 2px;">${n.time}</div>
+          </div>
+        `;
+        container.appendChild(item);
+
+        // Full view item
+        if (fullContainer) {
+          const fullItem = document.createElement("div");
+          fullItem.style.padding = "16px";
+          fullItem.style.border = "1px solid var(--border-color)";
+          fullItem.style.borderRadius = "var(--radius-md)";
+          fullItem.style.display = "flex";
+          fullItem.style.gap = "14px";
+          fullItem.style.alignItems = "center";
+          fullItem.style.backgroundColor = n.read ? "var(--bg-card)" : "var(--primary-subtle)";
+          fullItem.innerHTML = `
+            <i class="${n.icon}" style="font-size: 1.4rem;"></i>
+            <div style="flex: 1;">
+              <div style="font-weight: 700; font-size: 0.95rem;">${n.title}</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">${n.desc}</div>
+              <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">${n.time}</div>
+            </div>
+          `;
+          fullContainer.appendChild(fullItem);
+        }
+      });
+    }
+
+    function markAllNotificationsRead() {
+      notifications.forEach(n => n.read = true);
+      saveAllState();
+      updateHeaderUI();
+      renderHeaderNotifications();
+      showToast("All notifications marked as read.", "info");
+    }
+
+    function handleProfileUpdate(e) {
+      e.preventDefault();
+      const name = document.getElementById("profileInputName").value.trim();
+      const email = document.getElementById("profileInputEmail").value.trim();
+
+      currentUser.name = name;
+      currentUser.email = email;
+      saveAllState();
+      updateHeaderUI();
+      showToast("Profile details updated successfully!", "success");
+    }
+
+    /* =========================================================
+       AUTH MODAL (LOGIN & REGISTRATION) (Section 9)
+    ========================================================= */
+    let currentAuthTab = "login";
+
+    function openAuthModal(tab = "login") {
+      switchAuthTab(tab);
+      openModal("authModal");
+    }
+
+    function switchAuthTab(tab) {
+      currentAuthTab = tab;
+      document.getElementById("authTabLogin").classList.toggle("active", tab === "login");
+      document.getElementById("authTabLogin").classList.toggle("btn-primary", tab === "login");
+      document.getElementById("authTabLogin").classList.toggle("btn-outline", tab !== "login");
+
+      document.getElementById("authTabRegister").classList.toggle("active", tab === "register");
+      document.getElementById("authTabRegister").classList.toggle("btn-primary", tab === "register");
+      document.getElementById("authTabRegister").classList.toggle("btn-outline", tab !== "register");
+
+      if (tab === "register") {
+        document.getElementById("authModalTitle").textContent = "Create Eco Account";
+        document.getElementById("authNameGroup").style.display = "block";
+        document.getElementById("btnAuthSubmit").innerHTML = `<i class="fa-solid fa-user-plus"></i> Join Community`;
+      } else {
+        document.getElementById("authModalTitle").textContent = "Sign In to REUSE";
+        document.getElementById("authNameGroup").style.display = "none";
+        document.getElementById("btnAuthSubmit").innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In`;
+      }
+    }
+
+    function quickFillAuth(type) {
+      if (type === "admin") {
+        document.getElementById("authInputEmail").value = "admin@reuse-ims.org";
+        document.getElementById("authInputPassword").value = "admin2026";
+        currentUser.role = "admin";
+        currentUser.name = "Admin Moderator";
+      } else {
+        document.getElementById("authInputEmail").value = "sarah.green@example.org";
+        document.getElementById("authInputPassword").value = "reuse2026";
+        currentUser.role = "user";
+        currentUser.name = "Sarah Green";
+      }
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("authInputEmail").value.trim();
+      const name = document.getElementById("authInputName")?.value.trim() || (email.includes("admin") ? "Admin Moderator" : "Sarah Green");
+
+      currentUser.name = name;
+      currentUser.email = email;
+      currentUser.role = email.includes("admin") ? "admin" : "user";
+      currentUser.tier = currentUser.role === "admin" ? "System Admin" : "Eco Champion";
+
+      saveAllState();
+      updateHeaderUI();
+      renderAllViews();
+      closeModal("authModal");
+
+      showToast(`Welcome back, ${currentUser.name}! Signed in as ${currentUser.role}.`, "success");
+    }
+
+    /* =========================================================
+       TOAST NOTIFICATIONS
+    ========================================================= */
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = `toast-item ${type}`;
+
+      const icon = type === "success" ? "fa-solid fa-circle-check" : (type === "error" ? "fa-solid fa-circle-exclamation" : "fa-solid fa-circle-info");
+
+      toast.innerHTML = `
+        <i class="${icon} toast-icon"></i>
+        <div class="toast-text">${message}</div>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(40px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    /* Master Render */
+    function renderAllViews() {
+      applyFilters();
+      renderDonationView();
+      renderExchangeView();
+      renderRequestsTable("sent");
+      renderMyProductsTable();
+      renderAdminTables();
+      refreshDashboardStats();
+    }
+
+    // Startup
+    document.addEventListener("DOMContentLoaded", () => {
+      initDatabase();
+    });
+  </script>
+</body>
+</html>
+

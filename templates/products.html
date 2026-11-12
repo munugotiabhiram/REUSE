@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Products — REUSE Smart Reuse & Recycling IMS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon"><i class="fa-solid fa-recycle"></i></div>
+        <div class="brand-name">REUSE <span>• IMS</span></div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <div class="menu-label">Main Menu</div>
+        <a href="{{ url_for('index') }}" class="menu-item">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('products') }}" class="menu-item active">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Browse Products</span>
+          <span class="menu-badge">{{ total_count }}</span>
+        </a>
+        <a href="{{ url_for('add_product') }}" class="menu-item">
+          <i class="fa-solid fa-circle-plus"></i>
+          <span>Add New Product</span>
+        </a>
+
+        <div class="menu-label">Community Actions</div>
+        <a href="{{ url_for('products', type='donation') }}" class="menu-item">
+          <i class="fa-solid fa-hand-holding-heart"></i>
+          <span>Donate Items</span>
+        </a>
+        <a href="{{ url_for('products', type='exchange') }}" class="menu-item">
+          <i class="fa-solid fa-repeat"></i>
+          <span>Exchange Items</span>
+        </a>
+        <a href="{{ url_for('products') }}" class="menu-item">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <span>My Requests</span>
+        </a>
+
+        <div class="menu-label">Account</div>
+        <a href="{{ url_for('login') }}" class="menu-item">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>Profile</span>
+        </a>
+        <a href="{{ url_for('logout') }}" class="menu-item" style="color: var(--accent-rose);">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <form action="{{ url_for('products') }}" method="GET">
+              <input type="text" name="q" class="search-input" value="{{ search_query }}" placeholder="Filter products...">
+            </form>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <a href="{{ url_for('add_product') }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i> List Item
+          </a>
+          <div class="user-chip">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="user-avatar">
+            <div style="font-size: 0.84rem; font-weight: 700;">{{ user.name }}</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash-msg flash-{{ category }}">
+                  <i class="fa-solid fa-circle-check"></i> {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Filter Panel -->
+        <div class="card" style="margin-bottom: 24px;">
+          <form action="{{ url_for('products') }}" method="GET">
+            <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+              <!-- Category Pills -->
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="{{ url_for('products', category='all', type=active_type, condition=active_condition) }}" 
+                   class="btn btn-sm {% if active_category == 'all' %}btn-primary{% else %}btn-outline{% endif %}">
+                  All
+                </a>
+                <a href="{{ url_for('products', category='Clothes', type=active_type, condition=active_condition) }}" 
+                   class="btn btn-sm {% if active_category == 'Clothes' %}btn-primary{% else %}btn-outline{% endif %}">
+                  Clothes
+                </a>
+                <a href="{{ url_for('products', category='Books', type=active_type, condition=active_condition) }}" 
+                   class="btn btn-sm {% if active_category == 'Books' %}btn-primary{% else %}btn-outline{% endif %}">
+                  Books
+                </a>
+                <a href="{{ url_for('products', category='Electronics', type=active_type, condition=active_condition) }}" 
+                   class="btn btn-sm {% if active_category == 'Electronics' %}btn-primary{% else %}btn-outline{% endif %}">
+                  Electronics
+                </a>
+                <a href="{{ url_for('products', category='Furniture', type=active_type, condition=active_condition) }}" 
+                   class="btn btn-sm {% if active_category == 'Furniture' %}btn-primary{% else %}btn-outline{% endif %}">
+                  Furniture
+                </a>
+                <a href="{{ url_for('products', category='Household', type=active_type, condition=active_condition) }}" 
+                   class="btn btn-sm {% if active_category == 'Household' %}btn-primary{% else %}btn-outline{% endif %}">
+                  Household
+                </a>
+              </div>
+
+              <!-- Condition & Type dropdowns -->
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select name="type" class="form-select" onchange="this.form.submit()" style="padding: 6px 12px; font-size: 0.85rem; width: auto;">
+                  <option value="all" {% if active_type == 'all' %}selected{% endif %}>All Types</option>
+                  <option value="donation" {% if active_type == 'donation' %}selected{% endif %}>Free Donation Only</option>
+                  <option value="exchange" {% if active_type == 'exchange' %}selected{% endif %}>Exchange Only</option>
+                </select>
+
+                <select name="condition" class="form-select" onchange="this.form.submit()" style="padding: 6px 12px; font-size: 0.85rem; width: auto;">
+                  <option value="all" {% if active_condition == 'all' %}selected{% endif %}>All Conditions</option>
+                  <option value="New" {% if active_condition == 'New' %}selected{% endif %}>Brand New</option>
+                  <option value="Good" {% if active_condition == 'Good' %}selected{% endif %}>Good Condition</option>
+                  <option value="Used" {% if active_condition == 'Used' %}selected{% endif %}>Used</option>
+                </select>
+                <input type="hidden" name="category" value="{{ active_category }}">
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Products Count Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3>Available Listings ({{ total_count }})</h3>
+          <a href="{{ url_for('products') }}" class="btn btn-outline btn-sm">Clear All Filters</a>
+        </div>
+
+        <!-- Products Grid (Section 4) -->
+        <div class="products-grid">
+          {% for prod in products %}
+            <div class="product-card">
+              <!-- Product Image -->
+              <div class="product-img-wrap">
+                <img src="{{ prod.image }}" alt="{{ prod.name }}" class="product-img">
+                <div class="product-badge-float">
+                  {% if prod.type == 'donation' %}
+                    <span class="badge badge-donation"><i class="fa-solid fa-heart"></i> Free Donation</span>
+                  {% else %}
+                    <span class="badge badge-exchange"><i class="fa-solid fa-repeat"></i> Exchange</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Product Details -->
+              <div class="product-body">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span class="product-cat">{{ prod.category }}</span>
+                  <!-- Condition Badge -->
+                  <span class="badge badge-condition-{{ prod.condition.lower() }}">{{ prod.condition }}</span>
+                </div>
+                <!-- Product Name -->
+                <div class="product-name">{{ prod.name }}</div>
+                <!-- Product Description -->
+                <div class="product-desc">{{ prod.description }}</div>
+                <!-- Location & Status -->
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: var(--text-muted); margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                  <span><i class="fa-solid fa-location-dot text-danger"></i> {{ prod.location }}</span>
+                  <span class="badge" style="background:#dcfce7; color:#15803d;">{{ prod.status }}</span>
+                </div>
+              </div>
+
+              <!-- Request Item Button -->
+              <div class="product-footer">
+                <button class="btn btn-primary btn-sm w-100" onclick="openRequestModal('{{ prod.id }}', '{{ prod.name }}', '{{ prod.type }}')">
+                  <i class="fa-solid fa-handshake"></i> Request Item
+                </button>
+              </div>
+            </div>
+          {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+              <i class="fa-solid fa-boxes-stacked" style="font-size: 3rem; color: var(--text-light); margin-bottom: 12px;"></i>
+              <h3>No products match your criteria</h3>
+              <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Try resetting filters or searching with different keywords.</p>
+              <a href="{{ url_for('products') }}" class="btn btn-primary btn-sm mt-3">View All Products</a>
+            </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Item Modal -->
+  <div id="requestModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; border-radius:var(--radius-xl); width:100%; max-width:500px; padding:28px; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:1.2rem;">Request Item: <span id="modalProductTitle" style="color:var(--primary);"></span></h3>
+        <button onclick="closeRequestModal()" style="border:none; background:none; font-size:1.3rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <form action="{{ url_for('request_item') }}" method="POST">
+        <input type="hidden" name="product_id" id="modalProductId">
+        
+        <div class="form-group">
+          <label class="form-label">Message to Donor / Owner</label>
+          <textarea name="message" class="form-textarea" placeholder="Hello! I would love to reuse this item for my home/studies. When is a convenient time for pickup?" required></textarea>
+        </div>
+
+        <div class="form-group" id="modalExchangeOfferGroup" style="display:none;">
+          <label class="form-label">What item will you trade in exchange?</label>
+          <input type="text" name="exchange_offer" class="form-input" placeholder="e.g. Mechanical keyboard, headset, or art supplies">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Your Phone or WhatsApp for Pickup</label>
+          <input type="text" name="contact" class="form-input" placeholder="+1 (555) 019-2831" required>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="btn btn-outline" onclick="closeRequestModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-paper-plane"></i> Send Reuse Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

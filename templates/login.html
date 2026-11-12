@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — REUSE Smart Reuse & Recycling IMS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px;">
+
+  <div style="background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-xl); box-shadow:var(--shadow-lg); width:100%; max-width:440px; padding:36px;">
+    <!-- Logo & Title -->
+    <div style="text-align:center; margin-bottom:28px;">
+      <div class="brand-icon" style="margin:0 auto 14px auto; width:52px; height:52px; font-size:1.6rem;">
+        <i class="fa-solid fa-recycle"></i>
+      </div>
+      <h2 style="font-size:1.6rem;">Welcome to REUSE</h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-top:4px;">
+        Smart Reuse and Recycling Management System
+      </p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" id="loginEmail" class="form-input" placeholder="user@example.org" required value="sarah.green@example.org">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" id="loginPassword" class="form-input" placeholder="••••••••" required value="password123">
+      </div>
+
+      <!-- Quick Demo Account Fillers -->
+      <div style="background:var(--bg-subtle); border-radius:var(--radius-md); padding:12px; margin-bottom:18px;">
+        <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Quick Demo Accounts:</div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-outline btn-sm flex-1" onclick="fillDemo('user')">Sarah (User)</button>
+          <button type="button" class="btn btn-outline btn-sm flex-1" onclick="fillDemo('admin')">Admin (Mod)</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" style="padding:12px;">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:20px; font-size:0.88rem; color:var(--text-muted);">
+      Don't have an account? <a href="{{ url_for('register') }}" style="color:var(--primary); font-weight:700;">Join Community</a>
+    </div>
+
+    <div style="text-align:center; margin-top:10px;">
+      <a href="{{ url_for('index') }}" style="font-size:0.82rem; color:var(--text-light);"><i class="fa-solid fa-arrow-left"></i> Return to Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    function fillDemo(type) {
+      if (type === 'admin') {
+        document.getElementById('loginEmail').value = 'admin@reuse-ims.org';
+        document.getElementById('loginPassword').value = 'adminpassword';
+      } else {
+        document.getElementById('loginEmail').value = 'sarah.green@example.org';
+        document.getElementById('loginPassword').value = 'password123';
+      }
+    }
+  </script>
+</body>
+</html>
+
